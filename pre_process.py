@@ -7,14 +7,16 @@ if mask:
     import slice_with_mask
 else:
     import slice
-import wrap_data
+# import wrap_data
 from collections import OrderedDict
 
-root_path = "/home/cougarnet.uh.edu/pyuan2/Downloads/data/Lung_Data/NSCLC-Radiomics"
+root_path = "/home/cougarnet.uh.edu/amobiny/Desktop/DATASETS/Lung_CT_Segmentation_Challenge_2017/LCTSC/" \
+            "LCTSC-Train-S3-012/05-04-2004-NM PET SCAN RADIATION-26270"
 patient_list = sorted(os.listdir(root_path))
 Save = False
 ill_people = {}
 normal_people = []
+
 
 def get_data():
     for i in tqdm(range(len(patient_list))):

@@ -7,6 +7,7 @@ from skimage import draw
 output_path = "/home/cougarnet.uh.edu/pyuan2/Downloads/data/Lung_Data/dataset_with_mask/"
 images_path = "/home/cougarnet.uh.edu/pyuan2/Downloads/data/Lung_Data/images/"
 
+
 def load_scan(path):
     slices = [dicom.read_file(path + '/' + s) for s in os.listdir(path)]
     # slices.sort(key=lambda x: int(x.InstanceNumber))
@@ -20,6 +21,7 @@ def poly2mask(vertex_row_coords, vertex_col_coords, shape):
     mask = np.ones(shape, dtype=np.bool)
     mask[fill_row_coords, fill_col_coords] = False
     return mask
+
 
 def get_pixels_hu(scans):
     image = np.stack([s.pixel_array for s in scans])
@@ -43,6 +45,7 @@ def get_pixels_hu(scans):
 
     return np.array(image, dtype=np.int16)
 
+
 def shift(coords, patient):
     ImagePosition = patient[0].ImagePositionPatient
     ConstPixelSpacing = (patient[0].PixelSpacing[0], patient[0].PixelSpacing[1], patient[0].SliceThickness)
@@ -53,6 +56,7 @@ def shift(coords, patient):
     z = [-(iz - ImagePosition[2]) / ConstPixelSpacing[2] for iz in z]
     new_coords = list(zip(*(x, y, z)))
     return new_coords
+
 
 def get_image(data_path, contour_path, name, save=True):
 # data_path = "/home/cougarnet.uh.edu/pyuan2/Downloads/data/Lung_Data/NSCLC-Radiomics/LUNG1-001/09-18-2008-StudyID-69331/0-82046/"
@@ -103,14 +107,14 @@ def get_image(data_path, contour_path, name, save=True):
         plt.imshow(sliced_img, cmap='gray')
         try:
             plt.savefig(images_path + "/ill/" + "sliced_with_mask/" + name + ".png")
-        except FileNotFoundError:
+        except:
             os.makedirs(images_path + "/ill/" + "sliced_with_mask/")
             plt.savefig(images_path + "/ill/" + "sliced_with_mask/" + name + ".png")
         plt.close()
 
         try:
             np.save(output_path + name, sliced_img)
-        except FileNotFoundError:
+        except:
             os.makedirs(output_path)
             np.save(output_path + name, sliced_img)
 
@@ -118,10 +122,11 @@ def get_image(data_path, contour_path, name, save=True):
         file_used = output_path + name + ".npy"
         try:
             sliced_img = np.load(file_used).astype(np.float64)
-        except FileNotFoundError:
+        except:
             return -1
 
     return sliced_img
+
 
 def save_image_normal(data_path, name):
     patient = load_scan(data_path)
@@ -135,7 +140,7 @@ def save_image_normal(data_path, name):
         plt.imshow(imgs[slice_id], cmap='gray')
         try:
             plt.savefig(images_path + "/normal/" + name + ".png")
-        except FileNotFoundError:
+        except:
             os.makedirs(images_path + "/normal/" )
             plt.savefig(images_path + "/normal/" + name + ".png")
         plt.close()

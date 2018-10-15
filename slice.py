@@ -81,7 +81,7 @@ def get_image(data_path, contour_path, name, save=True):
         ax.plot(x, y, c='r')
         try:
             fig.savefig(images_path + "/ill/" + "original/" + name + ".png")
-        except FileNotFoundError:
+        except:
             os.makedirs(images_path + "/ill/" + "original/")
             fig.savefig(images_path + "/ill/" + "original/" + name + ".png")
         plt.close(fig)
@@ -95,14 +95,14 @@ def get_image(data_path, contour_path, name, save=True):
         plt.imshow(sliced_img, cmap='gray')
         try:
             plt.savefig(images_path + "/ill/" + "sliced/" + name + ".png")
-        except FileNotFoundError:
+        except:
             os.makedirs(images_path + "/ill/" + "sliced/")
             plt.savefig(images_path + "/ill/" + "sliced/" + name + ".png")
         plt.close()
 
         try:
             np.save(output_path + name, sliced_img)
-        except FileNotFoundError:
+        except:
             os.makedirs(output_path)
             np.save(output_path + name, sliced_img)
 
@@ -110,10 +110,11 @@ def get_image(data_path, contour_path, name, save=True):
         file_used = output_path + name + ".npy"
         try:
             sliced_img = np.load(file_used).astype(np.float64)
-        except FileNotFoundError:
+        except:
             return -1
 
     return sliced_img
+
 
 def save_image_normal(data_path, name):
     patient = load_scan(data_path)
@@ -127,7 +128,7 @@ def save_image_normal(data_path, name):
         plt.imshow(imgs[slice_id], cmap='gray')
         try:
             plt.savefig(images_path + "/normal/" + name + ".png")
-        except FileNotFoundError:
+        except:
             os.makedirs(images_path + "/normal/" )
             plt.savefig(images_path + "/normal/" + name + ".png")
         plt.close()

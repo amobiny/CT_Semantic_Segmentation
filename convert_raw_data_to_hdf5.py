@@ -1,6 +1,7 @@
 import os
 import pydicom as dicom
 import numpy as np
+from slice_with_mask import get_image
 
 
 def get_pixels_hu(scans):
@@ -37,6 +38,14 @@ def load_scan(path):
     return slices
 
 
-patient = load_scan('/home/cougarnet.uh.edu/amobiny/Desktop/DATASETS/Lung_CT_Segmentation_Challenge_2017/LCTSC/LCTSC-Train-S3-012/05-04-2004-NM PET SCAN RADIATION-26270/1-.simplified-86523')
-imgs = get_pixels_hu(patient)
+contour_path = '/home/cougarnet.uh.edu/amobiny/Desktop/DATASETS/Lung_CT_Segmentation_Challenge_2017/LCTSC/' \
+               'LCTSC-Train-S3-012/05-04-2004-NM PET SCAN RADIATION-26270/1-.simplified-86523/000000.dcm'
+
+image_path = '/home/cougarnet.uh.edu/amobiny/Desktop/DATASETS/Lung_CT_Segmentation_Challenge_2017/LCTSC/' \
+             'LCTSC-Train-S3-012/05-04-2004-NM PET SCAN RADIATION-26270/1-64131'
+
+get_image(image_path, contour_path, name='gi')
+
+# patient = load_scan('/home/cougarnet.uh.edu/amobiny/Desktop/DATASETS/Lung_CT_Segmentation_Challenge_2017/LCTSC/LCTSC-Train-S3-012/05-04-2004-NM PET SCAN RADIATION-26270/1-.simplified-86523')
+# imgs = get_pixels_hu(patient)
 print()
