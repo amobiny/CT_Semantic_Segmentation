@@ -105,7 +105,9 @@ venv.bak/
 .idea/
 idea/
 *.xml
-
+*.segdat
+/idea
+raw_data/
 
 
 

@@ -1,0 +1,143 @@
+const int UNSEGMENTED = 0;// - unsegmented
+const int EXTRACORPOREAL_AIR = 1;// - extra corporeal air
+const int UNSEGMENTED_EXTRAS_CORPOREAL = 2;// - unsegmented extra corporeal
+
+const int UNSEGMENTED_LUNG = 10;// - unsegmented lung
+const int TRACHEA = 11;// - trachea	 
+const int RIGHT_TRACHEOBRONCHIAL = 12;// - right
+const int LEFT_TRACHEOBRONCHIAL = 13;// - left
+const int PULMONARY_INTERSTITIUM = 15;// - pulmonary intersitium including PA
+const int SUSPECTED_PULMONARY_LESION = 16;// - pulmonary intersitium lesion analysis    
+
+
+2020 - OWF 
+2030	
+			
+const int ENTERIC_AIR = 100;// - enteric air
+const int INDETERMINATE_AIR = 101;// - indeterminate air (vacuum disk, etc)
+const int HIGH_PROB_EC_AIR_MARGIN = 102;// - high prob air contrast margin
+const int ENTERIC_CONTRAST = 103;// - enteric contrast
+const int HIGH_PROB_ENTERIC_CONTRAST = 104;// - high prob ec
+const int INDETERMINATE_ENTERIC_CONTRAT = 105;// - indeterminate enteric contrast
+
+const int INDETERMINTATE_SOFT_TISSUE = 105;// - indeterminate soft tissue
+const int SOFT_TISSUE_EDGE = 106;// - Soft tissue/organ edge
+const int HIGH_DENSITY_EDGE = 107;// - lumen //High density edge
+const int LUMEN_2 = 108;// - lumen 2//edge recon
+const int LUMEN_3 = 109;// - lumen 3
+
+const int FLUID_NOS = 128;// - fluid NOS
+const int FLUID_PLEURAL = 129;// - pleural fluid
+const int FLUID_ENTERIC = 130;// - enteric fluid
+const int FLUID_ASCITES = 131;// - ascites
+const int FLUID_BLADDER = 132;// - bladder
+const int FLUID_GALLBLADDER = 133;// - gallbladder
+
+const int CHEST_WALL_FAT = 200;// - chest wall fat
+const int CHEST_WALL_MUSCLE = 201;// - chest wall muscle
+const int CHEST_WALL_EDGE = 202;// - chest wall edge
+
+
+
+
+
+const int VISCERAL_VESSEL_NOS = 1000;// - visceral vessel
+const int VISCERAL_VESSEL_OSTIUM_ray = 1001;// - ostium ray
+const int VISCERAL_VESSEL_OVERLAP = 1002;// - ostium overlap
+const int VISCERAL_VESSEL_OSTIUM = 1003;// - ostium point
+const int VISCERAL_VESSEL_CELIAC = 1100;// - Celiac
+const int VISCERAL_VESSEL_SMA = 1200;// - SMA
+const int VISCERAL_VESSEL_RRA = 1300;// - Right Renal Artery
+const int VISCERAL_VESSEL_LRA = 1400;// - Left Renal Artery
+const int VISCERAL_VESSEL_IMA = 1500;// - IMA
+const int VISCERAL_VESSEL_LRV = 1600;// - Left Renal Vein
+
+
+const int CARDIC_GENERAL = 2560;// - Cardiac General	
+const int VESSEL_WALL = 2582;// - vessel wall
+const int VESSEL_WALL_BUFFER = 2583;// - vessel wall buffer
+const int VESSEL_LUMEN = 2585;// - vessel lumen
+const int VESSEL_ARCH_CENTERLINE = 2586;// - arch centerline
+const int VESSEL_ARCH_WALL = 2587;// - arch wall
+const int VESSEL_ASCENDING_AORTA = 2588;// - ascending arch path
+const int VESSEL_DESCENDING_AORTA = 2589;// - descending arch path
+
+const int VESSEL_SVC = 2590;// - svc
+
+
+const int PULMONARY_ARTERY_PARTICLE_0 2600;// - 2601 - Pulmonary Artery Particle
+const int PULMONARY_ARTERY_PARTICLE_1 2601;//
+const int PULMONARY_ARTERY = 2603;// 	  - Pulmonary Artery
+
+
+
+
+const int LIVER = 3000;// - Liver
+const int SPLEEN = 3100;// - Spleen
+const int KIDNEY_NOS = 3200;// - Kidney
+const int RIGHT_KIDNEY = 3220;// - Right Kidney
+const int RIGHT_KIDNEY_ALT = 3221;// - Right Kidney
+const int LEFT_KIDNEY = 3230;// - Left Kidney
+const int LEFT_KIDNEY_ALT = 3231;// - Left Kidney
+
+
+const int THYROID = 4000;// - Thyroid
+
+const int FLUID_COLLECTION = 4100;// - fluid
+const int FLUID_CYST = 4101;// - cyst
+
+const int SUSPECTED_MASS = 4200;// - suspected mass
+const int PROBABLE_MASS = 4201;// - probable mass
+
+
+const int PRESEGMENTED_BONE = 4999;// - presegmented bone
+const int BONE_NOS = 5000;//  - bone [unsegmented]
+const int BONE_SPINE = 5100;//  - Spine unspecified
+const int BONE_SPINE_L5 = 5124;//  - L5
+const int BONE_RIB = 5200;//  - Rib unspecified
+const int BONE_RIGHT_SCAPULA = 5250;//  - Right scapula
+const int BONE_LEFT_SCAPULA = 5260;//  - Left scapula
+const int BONE_SACRUM = 5300;//  - sacrum
+
+
+const int BONE_RIGHT_SI_JOINT = 5305;//  - right SI joint region
+const int BONE_RIGHT_ILIUM = 5310;//  - right ilium
+const int BONE_RIGHT_ISCHIUM = 5315;//  - right ischium
+const int BONE_RIGHT_PUBIS = 5320;//  - right pubis
+const int BONE_RIGHT_ACETABULUM = 5325;//  - right acetab
+const int BONE_RIGHT_ACETABULUM_BUFF = 5326;//  - right acetab buffer
+
+const int BONE_LEFT_SI_JOINT = 5355;//  - left SI joint region
+const int BONE_LEFT_ILIUM = 5360;//  - left ilium
+const int BONE_LEFT_ISCHIUM = 5365;//  - left ischium
+const int BONE_LEFT_PUBIS = 5370;//  - left pubis
+const int BONE_LEFT_ACETABULUM = 5375;//  - left acetab
+const int BONE_LEFT_ACETABULUM_BUFF = 5376;//  - left acetab buffer
+
+const int BONE_RIGHT_FEMUR_SHAFT = 5401;//  - right femoral shaft
+const int BONE_RIGHT_FEMUR_NECK = 5402;//  - right femoral neck
+const int BONE_RIGHT_FEMUR_HEAD = 5403;//  - right femoral head
+const int BONE_RIGHT_FEMUR_HEAD_BUFF = 5404;//  - right femoral head buffer
+
+const int BONE_LEFT_FEMUR_SHAFT = 5451;//  - left femoral shaft
+const int BONE_LEFT_FEMUR_NECK = 5452;//  - left femoral neck
+const int BONE_LEFT_FEMUR_HEAD = 5453;//  - left femoral head
+const int BONE_LEFT_FEMUR_HEAD_BUFF = 5454;//  - left femoral head buffer
+
+
+
+const int LESION_UNSPECIFIED = 7000;// - Unspecified Lesion
+
+
+const int BODY_WALL_UNSPECIFIED = 20440;//  - unsegmented body wall outside of orientation elipse
+const int BODY_WALL_OUTSIDE = 20450;//  - outside margins of body wall based on density 
+const int EXCLUDED_ARM = 20460;//  - excluded arm based on edge analysis
+const int CT_SCAN_TABLE = 20465;//  - CT scan table     
+const int METAL_STREAK = 20470;// 	- area of streak artifact related to metal
+const int METAL_DENSE = 20480;//  - metal
+const int DENSE_CONTRAST = 20481;//  - dense contrast
+const int EDGE_ARTIFACT = 20490;//  - edge artifact
+
+
+
+
