@@ -19,9 +19,9 @@ for file_path in all_files:
     img = np.zeros((512 * 512, num_slices))
     mask = np.zeros((512 * 512, num_slices))
     for i in tqdm(range(num_slices)):
-        data = np.array([int(dig) for dig in raw_text[i+2].split() if dig.isdigit()])
+        data = np.array([int(dig) for dig in raw_text[i+2].split() if dig.isdigit() or dig in ['-1', '-4']])
         img[:, i] = data[0:len(data):2]
-        mask[:, i] = data[1:len(data):2]
+        mask[:, i] = data[1:len(data)+1:2]
     run_time = time.time() - start_time
     data_dict[file_path.split('/')[-1].split('.')[0]] = \
         (img.reshape(512, 512, num_slices), mask.reshape(512, 512, num_slices))
