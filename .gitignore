@@ -108,6 +108,7 @@ idea/
 *.segdat
 /idea
 raw_data/
-
+*.h5
+*.pickle
 
 
