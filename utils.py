@@ -1,6 +1,6 @@
 import tensorflow as tf
-import tensorlayer as tl
-from sklearn.metrics import confusion_matrix
+# import tensorlayer as tl
+# from sklearn.metrics import confusion_matrix
 import numpy as np
 
 

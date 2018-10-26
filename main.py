@@ -4,7 +4,7 @@ from config import args
 # from model.FCNet import FCN
 # from model.Tiramisu import Tiramisu
 # from model.DenseNet import DenseNet
-from model.VNet import VNet
+from model.VNet import VNet as Model
 import os
 from utils import write_spec
 
@@ -14,7 +14,7 @@ def main(_):
         print('invalid mode: ', args.mode)
         print("Please input a mode: train, test, or predict")
     else:
-        model = DenseNet(tf.Session(), args)
+        model = Model(tf.Session(), args)
         if not os.path.exists(args.modeldir+args.run_name):
             os.makedirs(args.modeldir+args.run_name)
         if not os.path.exists(args.logdir+args.run_name):

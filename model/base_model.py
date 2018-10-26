@@ -11,8 +11,8 @@ class BaseModel(object):
         self.sess = sess
         self.conf = conf
         self.is_training = True
-        self.input_shape = [None, self.conf.height, self.conf.width, self.conf.depth, self.conf.channel]
-        self.output_shape = [None, self.conf.height, self.conf.width, self.conf.depth]
+        self.input_shape = [None, None, None, None, self.conf.channel]
+        self.output_shape = [None, None, None, None]
         self.create_placeholders()
 
     def create_placeholders(self):
@@ -20,6 +20,7 @@ class BaseModel(object):
             self.x = tf.placeholder(tf.float32, self.input_shape, name='input')
             self.y = tf.placeholder(tf.int64, self.output_shape, name='annotation')
             self.keep_prob = tf.placeholder(tf.float32)
+            # self.is_training = tf.placeholder_with_default(True, shape=(), name="is_train")
 
     def loss_func(self):
         with tf.name_scope('Loss'):
@@ -104,8 +105,8 @@ class BaseModel(object):
         else:
             print('----> Start Training')
         self.data_reader = DataLoader(self.conf)
-        self.numValid = self.data_reader.count_num_samples(mode='valid')
-        self.num_val_batch = int(self.numValid / self.conf.val_batch_size)
+        # self.numValid = self.data_reader.count_num_samples(mode='valid')
+        # self.num_val_batch = int(self.numValid / self.conf.val_batch_size)
         for train_step in range(1, self.conf.max_step + 1):
             # print('Step: {}'.format(train_step))
             self.is_training = True
@@ -124,9 +125,9 @@ class BaseModel(object):
                 x_batch, y_batch = self.data_reader.next_batch(mode='train')
                 feed_dict = {self.x: x_batch, self.y: y_batch, self.keep_prob: 0.5}
                 self.sess.run([self.train_op, self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
-            if train_step % self.conf.VAL_FREQ == 0:
-                self.is_training = False
-                self.evaluate(train_step)
+            # if train_step % self.conf.VAL_FREQ == 0:
+            #     self.is_training = False
+            #     self.evaluate(train_step)
 
     def evaluate(self, train_step):
         self.sess.run(tf.local_variables_initializer())
