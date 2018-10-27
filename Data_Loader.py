@@ -18,7 +18,7 @@ class DataLoader(object):
         self.height, self.width, self.depth, self.channel = cfg.height, cfg.width, cfg.depth, cfg.channel
         # self.max_bottom_left_front_corner = (cfg.height - 1, cfg.width - 1, cfg.depth - 1)
         project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
-        self.train_files = glob.glob(project_path + '/data_preparation/our_data/4_correctMask_normalized/*.h5')
+        self.train_files = glob.glob(project_path + '/data_preparation/our_data/5_down_sampled/*.h5')
         # maximum value that the bottom left front corner of a cropped patch can take
 
     def next_batch(self, start=None, end=None, mode='train'):

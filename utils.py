@@ -1,7 +1,7 @@
 import tensorflow as tf
 # import tensorlayer as tl
-# from sklearn.metrics import confusion_matrix
 import numpy as np
+# from sklearn.metrics import confusion_matrix
 
 
 def get_num_channels(x):
@@ -48,6 +48,26 @@ def pixel_wise_softmax(output_map):
     # tensor_sum_exp = tf.tile(sum_exp, tf.stack([1, 1, 1, tf.shape(output_map)[3]]))
     tensor_sum_exp = tf.tile(sum_exp, (1, 1, 1, 1, num_classes))
     return tf.div(exponential_map, tensor_sum_exp)
+
+
+def weighted_cross_entropy(y, logits, n_class):
+    flat_logits = tf.reshape(logits, [-1, n_class])
+    flat_labels = tf.reshape(y, [-1, n_class])
+    # your class weights
+    class_weights = tf.constant([[1.0, 200.0, 2000.0, 2000.0, 100.0, 2000.0]])
+    # deduce weights for batch samples based on their true label
+    weights = tf.reduce_sum(class_weights * flat_labels, axis=1)
+    # compute your (unweighted) softmax cross entropy loss
+    try:
+        unweighted_losses = tf.nn.softmax_cross_entropy_with_logits_v2(labels=flat_labels, logits=flat_logits)
+    except:
+        unweighted_losses = tf.nn.softmax_cross_entropy_with_logits(labels=flat_labels, logits=flat_logits)
+
+    # apply the weights, relying on broadcasting of the multiplication
+    weighted_losses = unweighted_losses * weights
+    # reduce the result to get your final loss
+    loss = tf.reduce_mean(weighted_losses)
+    return loss
 
 
 def add_noise(batch, mean=0, var=0.1, amount=0.01, mode='pepper'):

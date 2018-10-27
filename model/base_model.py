@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Data_Loader import DataLoader
-from utils import cross_entropy, dice_coeff, compute_iou
+from utils import cross_entropy, dice_coeff, compute_iou, weighted_cross_entropy
 import os
 import numpy as np
 
@@ -25,12 +25,15 @@ class BaseModel(object):
     def loss_func(self):
         with tf.name_scope('Loss'):
             y_one_hot = tf.one_hot(self.y, depth=self.conf.num_cls, axis=4, name='y_one_hot')
-            if self.conf.loss_type == 'cross-entropy':
-                with tf.name_scope('cross_entropy'):
-                    loss = cross_entropy(y_one_hot, self.logits, self.conf.num_cls)
-            elif self.conf.loss_type == 'dice':
-                with tf.name_scope('dice_coefficient'):
-                    loss = dice_coeff(y_one_hot, self.logits)
+            if self.conf.weighted_loss:
+                loss = weighted_cross_entropy(y_one_hot, self.logits, self.conf.num_cls)
+            else:
+                if self.conf.loss_type == 'cross-entropy':
+                    with tf.name_scope('cross_entropy'):
+                        loss = cross_entropy(y_one_hot, self.logits, self.conf.num_cls)
+                elif self.conf.loss_type == 'dice':
+                    with tf.name_scope('dice_coefficient'):
+                        loss = dice_coeff(y_one_hot, self.logits)
             with tf.name_scope('total'):
                 if self.conf.use_reg:
                     with tf.name_scope('L2_loss'):

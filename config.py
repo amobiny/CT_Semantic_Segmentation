@@ -14,6 +14,7 @@ flags.DEFINE_float('init_lr', 1e-3, 'Initial learning rate')
 flags.DEFINE_float('lr_min', 1e-5, 'Minimum learning rate')
 
 # Hyper-parameters
+flags.DEFINE_boolean('weighted_loss', False, 'Whether to use weighted cross-entropy or not')
 flags.DEFINE_string('loss_type', 'cross-entropy', 'cross-entropy or dice')
 flags.DEFINE_boolean('use_reg', False, 'Use L2 regularization on weights')
 flags.DEFINE_float('lmbda', 1e-4, 'L2 regularization coefficient')
@@ -27,9 +28,9 @@ flags.DEFINE_string('valid_data_dir', './data/', 'Validation data directory')
 flags.DEFINE_string('test_data_dir', './data/', 'Test data directory')
 flags.DEFINE_boolean('data_augment', False, 'Adds augmentation to data')
 flags.DEFINE_integer('max_angle', 40, 'Maximum rotation angle along each axis; when applying augmentation')
-flags.DEFINE_integer('height', 512, 'Network input height size')
-flags.DEFINE_integer('width', 512, 'Network input width size')
-flags.DEFINE_integer('depth', 8, 'Network input depth size')
+flags.DEFINE_integer('height', 256, 'Network input height size')
+flags.DEFINE_integer('width', 256, 'Network input width size')
+flags.DEFINE_integer('depth', 32, 'Network input depth size')
 flags.DEFINE_integer('channel', 1, 'Network input channel size')
 
 # Directories
@@ -39,7 +40,7 @@ flags.DEFINE_string('modeldir', './Results/model_dir/', 'Model directory')
 flags.DEFINE_string('model_name', 'model', 'Model file name')
 
 # network architecture
-flags.DEFINE_integer('num_cls', 3, 'Number of output classes')
+flags.DEFINE_integer('num_cls', 6, 'Number of output classes')
 flags.DEFINE_boolean('use_BN', True, 'Adds Batch-Normalization to all convolutional layers')
 flags.DEFINE_integer('start_channel_num', 16, 'start number of outputs for the first conv layer')
 flags.DEFINE_integer('filter_size', 3, 'Filter size for the conv and deconv layers')

@@ -29,17 +29,18 @@ def load_resize_save(input_files_path, dest_path, new_size=128):
             x_norm = np.squeeze(h5f['x_norm'][:])
             y = np.squeeze(h5f['y'][:])
             h5f.close()
-            print('Getting and resizing '.format(file_name))
-            new_x = zoom(x, (0.5, 0.5, 0.5), mode='nearest')
-            new_x_norm = zoom(x_norm, (0.5, 0.5, 0.5), mode='nearest')
+            print('Getting and resizing {}'.format(file_name))
+            new_x = zoom(x, (0.5, 0.5, 0.5), order=5, mode='wrap')
+            new_x_norm = zoom(x_norm, (0.5, 0.5, 0.5), order=5, mode='wrap')
             new_y = zoom(y, (0.5, 0.5, 0.5), order=5, mode='wrap').astype(int)
+            new_y[new_y > 5] = 5
+            new_y[new_y < 0] = 0
             assert new_x.shape == new_x_norm.shape == new_y.shape, 'shape does not match for '.format(file_name)
             h5f = h5py.File(dest_file_path, 'w')
             h5f.create_dataset('x', data=new_x[np.newaxis, :, :, :, np.newaxis])
             h5f.create_dataset('x_norm', data=new_x_norm[np.newaxis, :, :, :, np.newaxis])
             h5f.create_dataset('y', data=new_y[np.newaxis, :, :, :])
             h5f.close()
-            print()
 
 
 project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
