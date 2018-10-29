@@ -8,6 +8,7 @@ import glob
 class DataLoader(object):
 
     def __init__(self, cfg):
+        self.cfg = cfg
         self.augment = cfg.data_augment
         self.max_angle = cfg.max_angle
         self.train_data_dir = cfg.train_data_dir
@@ -18,20 +19,13 @@ class DataLoader(object):
         self.height, self.width, self.depth, self.channel = cfg.height, cfg.width, cfg.depth, cfg.channel
         # self.max_bottom_left_front_corner = (cfg.height - 1, cfg.width - 1, cfg.depth - 1)
         project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
-        self.train_files = glob.glob(project_path + '/data_preparation/our_data/5_down_sampled/*.h5')
+        self.train_files = glob.glob(project_path + '/data_preparation/our_data/4_correctMask_normalized/*.h5')
         # maximum value that the bottom left front corner of a cropped patch can take
 
     def next_batch(self, start=None, end=None, mode='train'):
         if mode == 'train':
             img_idx = np.sort(np.random.choice(self.num_tr, replace=False, size=self.batch_size))
-            x = np.zeros((self.batch_size, self.height, self.width, self.depth, self.channel))
-            y = np.zeros((self.batch_size, self.height, self.width, self.depth))
-            for i, num in enumerate(img_idx):
-                h5f = h5py.File(self.train_files[num], 'r')
-                scan_depth = h5f['x_norm'][:].shape[-2]
-                low = np.random.randint(low=0, high=scan_depth - self.depth - 1)
-                x[i] = h5f['x_norm'][:, :, :, low:low+self.depth]
-                y[i] = h5f['y'][:, :, :, low:low+self.depth]
+            x, y = self.random_crop(img_idx)
             if self.augment:
                 x, y = random_rotation_3d(x, y, max_angle=self.max_angle)
         elif mode == 'valid':
@@ -39,11 +33,12 @@ class DataLoader(object):
                 h5f = h5py.File(self.train_files[num], 'r')
                 x = h5f['x_valid'][start:end]
                 y = h5f['y_valid'][start:end]
+                h5f.close()
         elif mode == 'test':
             h5f = h5py.File(self.test_data_dir + 'test.h5', 'r')
             x = h5f['x_test'][start:end]
             y = h5f['y_test'][start:end]
-        h5f.close()
+            h5f.close()
         return x, y
 
     def count_num_samples(self, mode='valid'):
@@ -55,6 +50,32 @@ class DataLoader(object):
             num_ = h5f['y_test'][:].shape[0]
         h5f.close()
         return num_
+
+    def random_crop(self, img_idx):
+        if self.cfg.random_crop:
+            x = np.zeros([self.batch_size] + self.cfg.crop_size + [self.channel])
+            y = np.zeros([self.batch_size] + self.cfg.crop_size)
+            height, width, depth = self.cfg.crop_size
+            for i, num in enumerate(img_idx):
+                h5f = h5py.File(self.train_files[num], 'r')
+                scan_depth = h5f['x_norm'][:].shape[-2]
+                HStart = np.random.randint(low=0, high=512 - height - 1)
+                WStart = np.random.randint(low=0, high=512 - width - 1)
+                DStart = np.random.randint(low=0, high=scan_depth - depth - 1)
+                x[i] = h5f['x_norm'][:, HStart:HStart+height, WStart:WStart+width, DStart:DStart+depth]
+                y[i] = h5f['y'][:, HStart:HStart+height, WStart:WStart+width, DStart:DStart + depth]
+                h5f.close()
+        else:
+            x = np.zeros((self.batch_size, self.height, self.width, self.depth, self.channel))
+            y = np.zeros((self.batch_size, self.height, self.width, self.depth))
+            for i, num in enumerate(img_idx):
+                h5f = h5py.File(self.train_files[num], 'r')
+                scan_depth = h5f['x_norm'][:].shape[-2]
+                DStart = np.random.randint(low=0, high=scan_depth - self.depth - 1)
+                x[i] = h5f['x_norm'][:, :, :, DStart:DStart + self.depth]
+                y[i] = h5f['y'][:, :, :, DStart:DStart + self.depth]
+                h5f.close()
+        return x, y
 
 
 def random_rotation_3d(img_batch, mask_batch, max_angle):
