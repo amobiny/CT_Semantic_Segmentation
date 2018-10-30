@@ -23,7 +23,7 @@ def main(_):
             write_spec(args)
             model.train()
         elif args.mode == 'test':
-            model.test(step_num=args.step_num)
+            model.test(step_num=args.reload_step)
 
 
 if __name__ == '__main__':

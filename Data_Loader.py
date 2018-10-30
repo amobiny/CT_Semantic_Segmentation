@@ -17,38 +17,36 @@ class DataLoader(object):
         self.batch_size = cfg.batch_size
         self.num_tr = cfg.num_tr
         self.height, self.width, self.depth, self.channel = cfg.height, cfg.width, cfg.depth, cfg.channel
-        # self.max_bottom_left_front_corner = (cfg.height - 1, cfg.width - 1, cfg.depth - 1)
         project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
-        self.train_files = glob.glob(project_path + '/data_preparation/our_data/4_correctMask_normalized/*.h5')
-        # maximum value that the bottom left front corner of a cropped patch can take
+        self.train_files = glob.glob(project_path + self.cfg.train_data_dir + '*.h5')
+        self.valid_files = glob.glob(project_path + self.cfg.valid_data_dir + '*.h5')
 
-    def next_batch(self, start=None, end=None, mode='train'):
+    def next_batch(self, num=None, mode='train'):
         if mode == 'train':
             img_idx = np.sort(np.random.choice(self.num_tr, replace=False, size=self.batch_size))
             x, y = self.random_crop(img_idx)
             if self.augment:
                 x, y = random_rotation_3d(x, y, max_angle=self.max_angle)
         elif mode == 'valid':
-            for i, num in enumerate(self.train_files):
-                h5f = h5py.File(self.train_files[num], 'r')
-                x = h5f['x_valid'][start:end]
-                y = h5f['y_valid'][start:end]
-                h5f.close()
+            h5f = h5py.File(self.valid_files[num], 'r')
+            x = h5f['x_norm']
+            y = h5f['y']
+            h5f.close()
+            Dcuts = [num for num in range(0, x.shape[-2], self.cfg.Dcut_size)][1:]
+            x = np.concatenate(np.split(x, Dcuts, axis=-2)[:-1], axis=0)
+            y = np.concatenate(np.split(y, Dcuts, axis=-1)[:-1], axis=0)
         elif mode == 'test':
             h5f = h5py.File(self.test_data_dir + 'test.h5', 'r')
-            x = h5f['x_test'][start:end]
-            y = h5f['y_test'][start:end]
+            x = h5f['x_norm'][:]
+            y = h5f['y'][:]
             h5f.close()
         return x, y
 
     def count_num_samples(self, mode='valid'):
         if mode == 'valid':
-            h5f = h5py.File(self.valid_data_dir + 'valid.h5', 'r')
-            num_ = h5f['y_valid'][:].shape[0]
+            num_ = len(self.valid_files)
         elif mode == 'test':
-            h5f = h5py.File(self.test_data_dir + 'test.h5', 'r')
-            num_ = h5f['y_test'][:].shape[0]
-        h5f.close()
+            num_ = len(self.valid_files)
         return num_
 
     def random_crop(self, img_idx):

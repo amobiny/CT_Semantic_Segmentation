@@ -1,10 +1,8 @@
 import tensorflow as tf
-import time
 
 flags = tf.app.flags
 flags.DEFINE_string('mode', 'train', 'train or test')
 flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
-flags.DEFINE_integer('step_num', 2900, 'Reload step to test the model')
 
 # Training logs
 flags.DEFINE_integer('max_step', 250000, '# of step for training')
@@ -23,17 +21,18 @@ flags.DEFINE_integer('val_batch_size', 1, 'training batch size')
 
 # data
 flags.DEFINE_integer('num_tr', 20, 'Total number of training images')
-flags.DEFINE_string('train_data_dir', './data/', 'Training data directory')
-flags.DEFINE_string('valid_data_dir', './data/', 'Validation data directory')
-flags.DEFINE_string('test_data_dir', './data/', 'Test data directory')
+flags.DEFINE_string('train_data_dir', '/data_preparation/our_data/4_correctMask_normalized/train/', 'Training data')
+flags.DEFINE_string('valid_data_dir', '/data_preparation/our_data/4_correctMask_normalized/test/', 'Validation data ')
+flags.DEFINE_string('test_data_dir', '/data_preparation/our_data/4_correctMask_normalized/test/', 'Test data')
 flags.DEFINE_boolean('random_crop', True, 'Crops the input and output randomly during training time only')
-flags.DEFINE_list('crop_size', [256, 256, 32], 'crop sizes')
+flags.DEFINE_list('crop_size', [256, 256, 16], 'crop sizes')
 flags.DEFINE_boolean('data_augment', False, 'Adds augmentation to data')
 flags.DEFINE_integer('max_angle', 40, 'Maximum rotation angle along each axis; when applying augmentation')
 flags.DEFINE_integer('height', 512, 'Original image (and Network if random_crop is off) height size')
 flags.DEFINE_integer('width', 512, 'Original image (and Network if random_crop is off) width size')
 flags.DEFINE_integer('channel', 1, 'Original image channel size')
 flags.DEFINE_integer('depth', 32, 'Network depth size during training (if random_crop is off)')
+flags.DEFINE_integer('Dcut_size', 50, 'Depth of the validation slices')
 
 # Directories
 flags.DEFINE_string('run_name', 'run03', 'Run name')

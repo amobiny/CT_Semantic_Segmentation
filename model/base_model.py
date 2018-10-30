@@ -108,8 +108,8 @@ class BaseModel(object):
         else:
             print('----> Start Training')
         self.data_reader = DataLoader(self.conf)
-        # self.numValid = self.data_reader.count_num_samples(mode='valid')
-        # self.num_val_batch = int(self.numValid / self.conf.val_batch_size)
+        self.numValid = self.data_reader.count_num_samples(mode='valid')
+        self.num_val_batch = int(self.numValid / self.conf.val_batch_size)
         for train_step in range(1, self.conf.max_step + 1):
             # print('Step: {}'.format(train_step))
             self.is_training = True
@@ -128,23 +128,24 @@ class BaseModel(object):
                 x_batch, y_batch = self.data_reader.next_batch(mode='train')
                 feed_dict = {self.x: x_batch, self.y: y_batch, self.keep_prob: 0.5}
                 self.sess.run([self.train_op, self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
-            # if train_step % self.conf.VAL_FREQ == 0:
-            #     self.is_training = False
-            #     self.evaluate(train_step)
+            if train_step % self.conf.VAL_FREQ == 0:
+                self.is_training = False
+                self.evaluate(train_step)
 
     def evaluate(self, train_step):
         self.sess.run(tf.local_variables_initializer())
-        all_y = np.zeros((0, self.conf.height, self.conf.width, self.conf.depth))
-        all_y_pred = np.zeros((0, self.conf.height, self.conf.width, self.conf.depth))
+        scan_mask = np.zeros((0, self.conf.height, self.conf.width, self.conf.Dcut_size))
+        scan_mask_pred = np.zeros((0, self.conf.height, self.conf.width, self.conf.depth))
+        scan_num = 0
         for step in range(self.num_val_batch):
-            start = step * self.conf.val_batch_size
-            end = (step + 1) * self.conf.val_batch_size
-            x_val, y_val = self.data_reader.next_batch(start, end, mode='valid')
-            feed_dict = {self.x: x_val, self.y: y_val, self.keep_prob: 1}
-            self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
-            y, y_pred = self.sess.run([self.y, self.y_pred], feed_dict=feed_dict)
-            all_y = np.concatenate((all_y, y), axis=0)
-            all_y_pred = np.concatenate((all_y_pred, y_pred), axis=0)
+            x_val, y_val = self.data_reader.next_batch(num=scan_num, mode='valid')
+            for slice_num in range(x_val.shape[0]):     # for each slice of the validation image
+                feed_dict = {self.x: x_val[slice_num], self.y: y_val[slice_num], self.keep_prob: 1}
+                self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
+                mask, mask_pred = self.sess.run([self.y, self.y_pred], feed_dict=feed_dict)
+                scan_mask = np.concatenate((scan_mask, mask), axis=0)
+                all_y_pred = np.concatenate((scan_mask_pred, mask_pred), axis=0)
+            scan_num += 1
         IOU = compute_iou(all_y_pred, all_y, num_cls=self.conf.num_cls)
         mean_IOU = np.mean(IOU)
         summary_valid = self.sess.run(self.merged_summary, feed_dict=feed_dict)
