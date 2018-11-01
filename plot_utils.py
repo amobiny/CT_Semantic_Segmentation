@@ -47,32 +47,41 @@ def label_to_color_image(label):
     return colormap[label]
 
 
-def vis_segmentation(image, seg_map, label_names):
+def vis_segmentation(image, seg_map_gt, seg_map_pred, label_names):
     """Visualizes input image, segmentation map and overlay view."""
-    plt.figure(figsize=(15, 5))
-    grid_spec = gridspec.GridSpec(1, 4, width_ratios=[6, 6, 6, 1])
+    FULL_LABEL_MAP = np.arange(len(label_names)).reshape(len(label_names), 1)
+    FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
+    plt.figure(figsize=(20, 5))
+    grid_spec = gridspec.GridSpec(1, 5, width_ratios=[6, 6, 6, 6, 1])
 
+    # plot input image
     plt.subplot(grid_spec[0])
     plt.imshow(image, cmap='gray')
     plt.axis('off')
     plt.title('input image')
 
+    # plot ground truth mask
     plt.subplot(grid_spec[1])
-    seg_image = label_to_color_image(seg_map).astype(np.uint8)
+    seg_image = label_to_color_image(seg_map_gt).astype(np.uint8)
     plt.imshow(seg_image)
     plt.axis('off')
     plt.title('segmentation map')
 
     plt.subplot(grid_spec[2])
+    seg_image = label_to_color_image(seg_map_pred).astype(np.uint8)
+    plt.imshow(seg_image)
+    plt.axis('off')
+    plt.title('segmentation map')
+
+    plt.subplot(grid_spec[3])
     plt.imshow(image, cmap='gray')
-    plt.imshow(seg_image, alpha=0.7)
+    plt.imshow(seg_image, alpha=0.8)
     plt.axis('off')
     plt.title('segmentation overlay')
 
     unique_labels = np.unique(seg_map)
-    ax = plt.subplot(grid_spec[3])
-    plt.imshow(
-        FULL_COLOR_MAP[unique_labels].astype(np.uint8), interpolation='nearest')
+    ax = plt.subplot(grid_spec[4])
+    plt.imshow(FULL_COLOR_MAP[unique_labels].astype(np.uint8), interpolation='nearest')
     ax.yaxis.tick_right()
     plt.yticks(range(len(unique_labels)), label_names[unique_labels])
     plt.xticks([], [])
@@ -81,24 +90,22 @@ def vis_segmentation(image, seg_map, label_names):
     plt.show()
 
 
-# def plot_save_preds(file_path):
-LABEL_NAMES = np.asarray(['background', 'liver', 'spleen', 'kidney', 'bone', 'vessel'])
-FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
-FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
-File_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation/data_preparation/our_data/' \
-            '4_correctMask_normalized/PV_anon_1559_2_146_ARLS1.h5'
-h5f = h5py.File(File_path, 'r')
-x = np.squeeze(h5f['x'][:])
-x_norm = np.squeeze(h5f['x_norm'][:])
-y = np.squeeze(h5f['y'][:])
-h5f.close()
-image = x_norm[:, :, 50]
-true_mask = y[:, :, 50]
-vis_segmentation(image, true_mask, LABEL_NAMES)
+def plot_save_preds(images, masks, mask_preds, path, label_names):
+    for image, mask, mask_pred in zip(images, masks, mask_preds):
+        vis_segmentation(image, mask, mask_pred, label_names, save_path=path)
 
 
-
-
-
+if __name__ == '__main__':
+    LABEL_NAMES = np.asarray(['background', 'liver', 'spleen', 'kidney', 'bone', 'vessel'])
+    File_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation/data_preparation/' \
+                'our_data/4_correctMask_normalized/train/PV_anon_1579_5_232_ARLS1.h5'
+    h5f = h5py.File(File_path, 'r')
+    x = np.squeeze(h5f['x'][:])
+    x_norm = np.squeeze(h5f['x_norm'][:])
+    y = np.squeeze(h5f['y'][:])
+    h5f.close()
+    image = x_norm[:, :, 50]
+    true_mask = y[:, :, 50]
+    vis_segmentation(image, true_mask, LABEL_NAMES)
 
 print()

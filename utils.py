@@ -1,7 +1,7 @@
 import tensorflow as tf
 # import tensorlayer as tl
 import numpy as np
-# from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix
 
 
 def get_num_channels(x):

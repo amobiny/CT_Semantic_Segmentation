@@ -7,7 +7,7 @@ project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
 # path of raw hdf5 scans
 all_files = glob.glob(project_path + '/data_preparation/our_data/2_hdf5_files/*.h5')
 # path to move empty or corrupted files into it
-empty_file_dest_path = (project_path + '/data_preparation/our_data/3_empty_files/')
+empty_file_dest_path = project_path + '/data_preparation/our_data/3_empty_files/'
 if not os.path.exists(empty_file_dest_path):
     os.makedirs(empty_file_dest_path)
 

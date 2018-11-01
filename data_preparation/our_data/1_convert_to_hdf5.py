@@ -6,12 +6,11 @@ import matplotlib.pyplot as plt
 import h5py
 import cPickle as pickle
 import os
-
-all_files = glob.glob('/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation/data_preparation/our_data/1_raw_data/*.segdat')
-destination_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation/data_preparation/our_data/2_hdf5_files/'
+project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
+all_files = glob.glob(project_path + '/data_preparation/our_data/1_raw_data/*.segdat')
+destination_path = project_path + '/data_preparation/our_data/2_hdf5_files/'
 if not os.path.exists(destination_path):
     os.makedirs(destination_path)
-
 
 img_counter = 0
 
@@ -19,7 +18,8 @@ for file_path in all_files:
     start_time = time.time()
     file_name = file_path.split('/')[-1].split('.')[0]
     hdf5_file_path = destination_path + file_name + '.h5'
-    if os.path.exists(hdf5_file_path):
+    empty_file_path = project_path + '/data_preparation/our_data/3_empty_files/' + file_name + '.h5'
+    if os.path.exists(hdf5_file_path) or os.path.exists(empty_file_path):
         continue
     with open(file_path, 'r') as content_file:
         file_name = file_path.split('/')[-1].split('.')[0]

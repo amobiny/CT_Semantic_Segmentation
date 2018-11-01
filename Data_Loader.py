@@ -29,8 +29,8 @@ class DataLoader(object):
                 x, y = random_rotation_3d(x, y, max_angle=self.max_angle)
         elif mode == 'valid':
             h5f = h5py.File(self.valid_files[num], 'r')
-            x = h5f['x_norm']
-            y = h5f['y']
+            x = h5f['x_norm'][:]
+            y = h5f['y'][:]
             h5f.close()
             Dcuts = [num for num in range(0, x.shape[-2], self.cfg.Dcut_size)][1:]
             x = np.concatenate(np.split(x, Dcuts, axis=-2)[:-1], axis=0)

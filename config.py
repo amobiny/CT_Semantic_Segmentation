@@ -32,12 +32,13 @@ flags.DEFINE_integer('height', 512, 'Original image (and Network if random_crop 
 flags.DEFINE_integer('width', 512, 'Original image (and Network if random_crop is off) width size')
 flags.DEFINE_integer('channel', 1, 'Original image channel size')
 flags.DEFINE_integer('depth', 32, 'Network depth size during training (if random_crop is off)')
-flags.DEFINE_integer('Dcut_size', 50, 'Depth of the validation slices')
+flags.DEFINE_integer('Dcut_size', 40, 'Depth of the validation slices')
 
 # Directories
 flags.DEFINE_string('run_name', 'run03', 'Run name')
 flags.DEFINE_string('logdir', './Results/log_dir/', 'Logs directory')
 flags.DEFINE_string('modeldir', './Results/model_dir/', 'Model directory')
+flags.DEFINE_string('imagedir', './Results/image_dir/', 'Directory to save sample predictions')
 flags.DEFINE_string('model_name', 'model', 'Model file name')
 
 # network architecture

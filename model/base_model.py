@@ -1,5 +1,6 @@
 import tensorflow as tf
 from Data_Loader import DataLoader
+from plot_utils import plot_save_preds
 from utils import cross_entropy, dice_coeff, compute_iou, weighted_cross_entropy
 import os
 import numpy as np
@@ -76,18 +77,22 @@ class BaseModel(object):
         print('*' * 50)
 
     def configure_summary(self):
+        if self.conf.random_crop:
+            slice = int(self.conf.crop_size[-1]/2)
+        else:
+            slice = int(self.conf.depth/2)
         summary_list = [tf.summary.scalar('learning_rate', self.learning_rate),
                         tf.summary.scalar('loss', self.mean_loss),
                         tf.summary.scalar('accuracy', self.mean_accuracy),
                         tf.summary.image('train/original_image',
-                                         self.x[:, :, :, int(self.conf.depth/2)],
+                                         self.x[:, :, :, slice, :],
                                          max_outputs=self.conf.batch_size),
                         tf.summary.image('train/prediction_mask',
-                                         tf.cast(tf.expand_dims(self.y_pred[:, :, :, int(self.conf.depth/2)], -1),
+                                         tf.cast(tf.expand_dims(self.y_pred[:, :, :, slice], -1),
                                                  tf.float32),
                                          max_outputs=self.conf.batch_size),
                         tf.summary.image('train/original_mask',
-                                         tf.cast(tf.expand_dims(self.y[:, :, :, int(self.conf.depth/2)], -1), tf.float32),
+                                         tf.cast(tf.expand_dims(self.y[:, :, :, slice], -1), tf.float32),
                                          max_outputs=self.conf.batch_size)]
         self.merged_summary = tf.summary.merge(summary_list)
 
@@ -110,7 +115,7 @@ class BaseModel(object):
         self.data_reader = DataLoader(self.conf)
         self.numValid = self.data_reader.count_num_samples(mode='valid')
         self.num_val_batch = int(self.numValid / self.conf.val_batch_size)
-        for train_step in range(1, self.conf.max_step + 1):
+        for train_step in range(self.conf.max_step + 1):
             # print('Step: {}'.format(train_step))
             self.is_training = True
             if train_step % self.conf.SUMMARY_FREQ == 0:
@@ -134,20 +139,30 @@ class BaseModel(object):
 
     def evaluate(self, train_step):
         self.sess.run(tf.local_variables_initializer())
+        scan_input = np.zeros((0, self.conf.height, self.conf.width, self.conf.Dcut_size, self.conf.channel))
         scan_mask = np.zeros((0, self.conf.height, self.conf.width, self.conf.Dcut_size))
-        scan_mask_pred = np.zeros((0, self.conf.height, self.conf.width, self.conf.depth))
+        scan_mask_pred = np.zeros((0, self.conf.height, self.conf.width, self.conf.Dcut_size))
         scan_num = 0
         for step in range(self.num_val_batch):
             x_val, y_val = self.data_reader.next_batch(num=scan_num, mode='valid')
             for slice_num in range(x_val.shape[0]):     # for each slice of the validation image
-                feed_dict = {self.x: x_val[slice_num], self.y: y_val[slice_num], self.keep_prob: 1}
+                feed_dict = {self.x: np.expand_dims(x_val[slice_num], 0),
+                             self.y: np.expand_dims(y_val[slice_num], 0),
+                             self.keep_prob: 1}
                 self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
-                mask, mask_pred = self.sess.run([self.y, self.y_pred], feed_dict=feed_dict)
+                input, mask, mask_pred = self.sess.run([self.x, self.y, self.y_pred], feed_dict=feed_dict)
+                scan_input = np.concatenate((scan_input, input), axis=0)
                 scan_mask = np.concatenate((scan_mask, mask), axis=0)
-                all_y_pred = np.concatenate((scan_mask_pred, mask_pred), axis=0)
+                scan_mask_pred = np.concatenate((scan_mask_pred, mask_pred), axis=0)
             scan_num += 1
-        IOU = compute_iou(all_y_pred, all_y, num_cls=self.conf.num_cls)
+        IOU = compute_iou(scan_mask_pred, scan_mask, num_cls=self.conf.num_cls)
         mean_IOU = np.mean(IOU)
+        LABEL_NAMES = np.asarray(['background', 'liver', 'spleen', 'kidney', 'bone', 'vessel'])
+        slice_idx = np.random.randint(low=0, high=100, size=10)
+        destination_path = self.conf.image_dir + self.conf.run_name
+        if not os.path.exists(destination_path):
+            os.makedirs(destination_path)
+        plot_save_preds(scan_input[slice_idx], scan_mask[slice_idx], scan_mask_pred[slice_idx], LABEL_NAMES)
         summary_valid = self.sess.run(self.merged_summary, feed_dict=feed_dict)
         valid_loss, valid_acc = self.sess.run([self.mean_loss, self.mean_accuracy])
         self.save_summary(summary_valid, train_step + self.conf.reload_step)
@@ -177,7 +192,7 @@ class BaseModel(object):
         for step in range(self.num_test_batch):
             start = step * self.conf.val_batch_size
             end = (step + 1) * self.conf.val_batch_size
-            x_test, y_test = self.data_reader.next_batch(start, end, mode='test')
+            x_test, y_test = self.data_reader.next_batch(start, mode='test')
             feed_dict = {self.x: x_test, self.y: y_test, self.keep_prob: 1}
             self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
             y, y_pred = self.sess.run([self.y, self.y_pred], feed_dict=feed_dict)
