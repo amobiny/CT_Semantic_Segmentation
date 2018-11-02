@@ -21,16 +21,18 @@ for file_ in all_files:
     all_mask.append(y)
 
 
-def check_duplicate(array_list):
+def check_duplicate(array_list, files):
     for i, array_1 in enumerate(array_list):
         for j, array_2 in enumerate(array_list[i+1:]):
             if array_1.shape[0] == array_2.shape[0]:
                 if np.sum(array_1 - array_2) == 0:
+                    file1 = files[i].split('/')[-1].split('.')[0]
+                    file2 = files[j].split('/')[-1].split('.')[0]
                     print('duplicate found')
+                    print('{0} and {1}'.format(file1, file2))
 
-
-check_duplicate(all_img)
-check_duplicate(all_mask)
+check_duplicate(all_img, all_files)
+check_duplicate(all_mask, all_files)
 
 # plot the number of slices
 num_slices = []

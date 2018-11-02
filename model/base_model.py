@@ -4,6 +4,7 @@ from plot_utils import plot_save_preds
 from utils import cross_entropy, dice_coeff, compute_iou, weighted_cross_entropy
 import os
 import numpy as np
+import time
 
 
 class BaseModel(object):
@@ -58,7 +59,7 @@ class BaseModel(object):
         global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
         learning_rate = tf.train.exponential_decay(self.conf.init_lr,
                                                    global_step,
-                                                   decay_steps=500,
+                                                   decay_steps=1000,
                                                    decay_rate=0.97,
                                                    staircase=True)
         self.learning_rate = tf.maximum(learning_rate, self.conf.lr_min)
@@ -155,14 +156,22 @@ class BaseModel(object):
                 scan_mask = np.concatenate((scan_mask, mask), axis=0)
                 scan_mask_pred = np.concatenate((scan_mask_pred, mask_pred), axis=0)
             scan_num += 1
+        print('compute iou')
+        start_time = time.time()
         IOU = compute_iou(scan_mask_pred, scan_mask, num_cls=self.conf.num_cls)
         mean_IOU = np.mean(IOU)
+        end_time = time.time()
+        print('It took {}'.format(end_time-start_time))
         LABEL_NAMES = np.asarray(['background', 'liver', 'spleen', 'kidney', 'bone', 'vessel'])
-        slice_idx = np.random.randint(low=0, high=100, size=10)
-        destination_path = self.conf.image_dir + self.conf.run_name
-        if not os.path.exists(destination_path):
-            os.makedirs(destination_path)
-        plot_save_preds(scan_input[slice_idx], scan_mask[slice_idx], scan_mask_pred[slice_idx], LABEL_NAMES)
+        slice_idx = np.random.randint(low=0, high=scan_mask_pred.shape[0], size=10)
+        depth_idx = np.random.randint(low=0, high=scan_mask_pred.shape[-1], size=10)
+        dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
+        if not os.path.exists(dest_path):
+            os.makedirs(dest_path)
+        plot_save_preds(np.squeeze(scan_input[slice_idx, :, :, depth_idx, :]),
+                        scan_mask[slice_idx, :, :, depth_idx],
+                        scan_mask_pred[slice_idx, :, :, depth_idx],
+                        dest_path, LABEL_NAMES)
         summary_valid = self.sess.run(self.merged_summary, feed_dict=feed_dict)
         valid_loss, valid_acc = self.sess.run([self.mean_loss, self.mean_accuracy])
         self.save_summary(summary_valid, train_step + self.conf.reload_step)
@@ -175,8 +184,9 @@ class BaseModel(object):
         print('-' * 25 + 'Validation' + '-' * 25)
         print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}{3}'
               .format(train_step, valid_loss, valid_acc, improved_str))
-        print('BackGround={0:.01%}, Neuron={1:.01%}, Vessel={2:.01%}, Average={3:.01%}'
-              .format(IOU[0], IOU[1], IOU[2], mean_IOU))
+        print('background={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
+              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}, Average={6:.01%}'
+              .format(IOU[0], IOU[1], IOU[2], IOU[3], IOU[4], IOU[5], mean_IOU))
         print('-' * 60)
 
     def test(self, step_num):
