@@ -54,7 +54,7 @@ def weighted_cross_entropy(y, logits, n_class):
     flat_logits = tf.reshape(logits, [-1, n_class])
     flat_labels = tf.reshape(y, [-1, n_class])
     # your class weights
-    class_weights = tf.constant([[1.0, 200.0, 2000.0, 2000.0, 100.0, 2000.0]])
+    class_weights = tf.constant([[1.0, 2.0, 10.0, 10.0, 2.0, 10.0]])
     # deduce weights for batch samples based on their true label
     weights = tf.reduce_sum(class_weights * flat_labels, axis=1)
     # compute your (unweighted) softmax cross entropy loss
@@ -114,14 +114,47 @@ def write_spec(args):
     config_file.close()
 
 
-def compute_iou(y_pred, y_label, num_cls):
-    y_pred = y_pred.flatten()
-    y_label = y_label.flatten()
-    current = confusion_matrix(y_label, y_pred, labels=list(range(num_cls)))
-    # compute mean iou
-    intersection = np.diag(current)
-    ground_truth_set = current.sum(axis=1)
-    predicted_set = current.sum(axis=0)
+def compute_iou(hist):
+# def compute_iou(y_pred, y_label, num_cls):
+    # y_pred = y_pred.flatten()
+    # y_label = y_label.flatten()
+    # current = confusion_matrix(y_label, y_pred, labels=list(range(num_cls)))
+    # # compute mean iou
+    intersection = np.diag(hist)
+    ground_truth_set = hist.sum(axis=1)
+    predicted_set = hist.sum(axis=0)
     union = ground_truth_set + predicted_set - intersection
     IoU = intersection / union.astype(np.float32)
-    return IoU
+    acc = np.diag(hist)/np.sum(hist, axis=1)
+    return IoU, acc
+
+
+def get_hist(y_pred, y, num_cls):
+    """
+    computes the confusion matrix
+    :param y_pred: flattened predictions
+    :param y: flattened labels
+    :param num_cls: number of classes
+    :return: confusion matrix of shape (C, C)
+    """
+    k = (y >= 0) & (y < num_cls)
+    hist = np.bincount(num_cls * y[k].astype(int) + y_pred[k], minlength=num_cls ** 2).reshape(num_cls, num_cls)
+    return hist
+
+
+def print_hist_summary(hist):
+    """
+    This function is copied from "Implement slightly different segnet on tensorflow"
+    """
+    acc_total = np.diag(hist).sum() / hist.sum()
+    print('accuracy = %f' % np.nanmean(acc_total))
+    iu = np.diag(hist) / (hist.sum(1) + hist.sum(0) - np.diag(hist))
+    print('mean IU  = %f' % np.nanmean(iu))
+    for ii in range(hist.shape[0]):
+        if float(hist.sum(1)[ii]) == 0:
+            acc = 0.0
+        else:
+            acc = np.diag(hist)[ii] / float(hist.sum(1)[ii])
+        print("    class # %d accuracy = %f " % (ii, acc))
+
+

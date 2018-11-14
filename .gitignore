@@ -112,3 +112,4 @@ raw_data/
 *.pickle
 *.png
 Results/
+data_preparation/

@@ -12,7 +12,7 @@ flags.DEFINE_float('init_lr', 1e-3, 'Initial learning rate')
 flags.DEFINE_float('lr_min', 1e-5, 'Minimum learning rate')
 
 # Hyper-parameters
-flags.DEFINE_boolean('weighted_loss', False, 'Whether to use weighted cross-entropy or not')
+flags.DEFINE_boolean('weighted_loss', True, 'Whether to use weighted cross-entropy or not')
 flags.DEFINE_string('loss_type', 'cross-entropy', 'cross-entropy or dice')
 flags.DEFINE_boolean('use_reg', False, 'Use L2 regularization on weights')
 flags.DEFINE_float('lmbda', 1e-4, 'L2 regularization coefficient')
@@ -21,9 +21,9 @@ flags.DEFINE_integer('val_batch_size', 1, 'training batch size')
 
 # data
 flags.DEFINE_integer('num_tr', 20, 'Total number of training images')
-flags.DEFINE_string('train_data_dir', '/data_preparation/our_data/4_correctMask_normalized/train/', 'Training data')
-flags.DEFINE_string('valid_data_dir', '/data_preparation/our_data/4_correctMask_normalized/test/', 'Validation data ')
-flags.DEFINE_string('test_data_dir', '/data_preparation/our_data/4_correctMask_normalized/test/', 'Test data')
+flags.DEFINE_string('train_data_dir', '/data_preparation/our_data/4_correctMask_normalized/new_train/', 'Training data')
+flags.DEFINE_string('valid_data_dir', '/data_preparation/our_data/4_correctMask_normalized/new_test/', 'Validation data ')
+flags.DEFINE_string('test_data_dir', '/data_preparation/our_data/4_correctMask_normalized/new_test/', 'Test data')
 flags.DEFINE_boolean('random_crop', True, 'Crops the input and output randomly during training time only')
 flags.DEFINE_list('crop_size', [256, 256, 16], 'crop sizes')
 flags.DEFINE_boolean('data_augment', False, 'Adds augmentation to data')
@@ -35,7 +35,7 @@ flags.DEFINE_integer('depth', 32, 'Network depth size during training (if random
 flags.DEFINE_integer('Dcut_size', 40, 'Depth of the validation slices')
 
 # Directories
-flags.DEFINE_string('run_name', 'run01', 'Run name')
+flags.DEFINE_string('run_name', 'run03', 'Run name')
 flags.DEFINE_string('logdir', './Results/log_dir/', 'Logs directory')
 flags.DEFINE_string('modeldir', './Results/model_dir/', 'Model directory')
 flags.DEFINE_string('imagedir', './Results/image_dir/', 'Directory to save sample predictions')
