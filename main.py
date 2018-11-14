@@ -5,6 +5,8 @@ from config import args
 # from model.Tiramisu import Tiramisu
 # from model.DenseNet import DenseNet
 from model.VNet import VNet as Model
+from model.SegNet import SegNet as Model
+
 import os
 from utils import write_spec
 

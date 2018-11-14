@@ -19,12 +19,12 @@ class VNet(BaseModel):
         self.k_size = self.conf.filter_size
         self.down_conv_factor = 2
         self.act_fcn = act_fcn
-        self.build_network(self.x)
+        self.build_network(self.inputs_pl)
         self.configure_network()
 
     def build_network(self, x):
         # Building network...
-        with tf.variable_scope('V-Net'):
+        with tf.variable_scope('VNet'):
             feature_list = list()
 
             with tf.variable_scope('Encoder'):
@@ -44,8 +44,7 @@ class VNet(BaseModel):
                         x = self.up_conv(x)
                         x = self.conv_block_up(x, f, self.num_convs[l])
 
-            self.logits = conv_3d(x, 1, self.conf.num_cls, 'Output_layer', add_batch_norm=self.conf.use_BN,
-                                  is_train=self.is_training)
+            self.logits = conv_3d(x, 1, self.conf.num_cls, 'Output_layer', self.conf.use_BN, self.is_training_pl)
 
     def conv_block_down(self, layer_input, num_convolutions):
         x = layer_input
@@ -58,11 +57,11 @@ class VNet(BaseModel):
                         num_filters=n_channels,
                         layer_name='conv_' + str(i + 1),
                         add_batch_norm=self.conf.use_BN,
-                        is_train=self.is_training)
+                        is_train=self.is_training_pl)
             if i == num_convolutions - 1:
                 x = x + layer_input
             x = self.act_fcn(x, name='prelu_' + str(i + 1))
-            x = tf.nn.dropout(x, self.keep_prob)
+            x = tf.nn.dropout(x, self.keep_prob_pl)
         return x
 
     def conv_block_up(self, layer_input, fine_grained_features, num_convolutions):
@@ -74,11 +73,11 @@ class VNet(BaseModel):
                         num_filters=n_channels,
                         layer_name='conv_' + str(i + 1),
                         add_batch_norm=self.conf.use_BN,
-                        is_train=self.is_training)
+                        is_train=self.is_training_pl)
             if i == num_convolutions - 1:
                 x = x + layer_input
             x = self.act_fcn(x, name='prelu_' + str(i + 1))
-            x = tf.nn.dropout(x, self.keep_prob)
+            x = tf.nn.dropout(x, self.keep_prob_pl)
         return x
 
     def down_conv(self, x):
@@ -89,7 +88,7 @@ class VNet(BaseModel):
                     layer_name='conv_down',
                     stride=2,
                     add_batch_norm=self.conf.use_BN,
-                    is_train=self.is_training,
+                    is_train=self.is_training_pl,
                     activation=self.act_fcn)
         return x
 
@@ -101,5 +100,5 @@ class VNet(BaseModel):
                       layer_name='conv_up',
                       stride=2,
                       add_batch_norm=self.conf.use_BN,
-                      is_train=self.is_training)
+                      is_train=self.is_training_pl)
         return x

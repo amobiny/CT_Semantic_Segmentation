@@ -12,7 +12,7 @@ class BaseModel(object):
     def __init__(self, sess, conf):
         self.sess = sess
         self.conf = conf
-        self.is_training = True
+        self.bayes = conf.bayes
         self.input_shape = [None, None, None, None, self.conf.channel]
         self.output_shape = [None, None, None, None]
         self.create_placeholders()
@@ -21,8 +21,9 @@ class BaseModel(object):
         with tf.name_scope('Input'):
             self.inputs_pl = tf.placeholder(tf.float32, self.input_shape, name='input')
             self.labels_pl = tf.placeholder(tf.int64, self.output_shape, name='annotation')
-            self.keep_prob_pl = tf.placeholder(tf.float32)
             self.is_training_pl = tf.placeholder(tf.bool, name="is_training")
+            self.with_dropout_pl = tf.placeholder(tf.bool, name="with_dropout")
+            self.keep_prob_pl = tf.placeholder(tf.float32)
 
     def loss_func(self):
         with tf.name_scope('Loss'):
@@ -97,9 +98,9 @@ class BaseModel(object):
                                          max_outputs=5)]
         self.merged_summary = tf.summary.merge(summary_list)
 
-    def save_summary(self, summary, step):
+    def save_summary(self, summary, step, is_train):
         # print('----> Summarizing at step {}'.format(step))
-        if self.is_training:
+        if is_train:
             self.train_writer.add_summary(summary, step)
         else:
             self.valid_writer.add_summary(summary, step)
@@ -117,13 +118,13 @@ class BaseModel(object):
         self.numValid = self.data_reader.count_num_samples(mode='valid')
         self.num_val_batch = int(self.numValid / self.conf.val_batch_size)
         for train_step in range(self.conf.max_step + 1):
-            # print('Step: {}'.format(train_step))
-            self.is_training = True
+            x_batch, y_batch = self.data_reader.next_batch(mode='train')
+            feed_dict = {self.inputs_pl: x_batch,
+                         self.labels_pl: y_batch,
+                         self.is_training_pl: True,
+                         self.with_dropout_pl: True,
+                         self.keep_prob_pl: 0.5}
             if train_step % self.conf.SUMMARY_FREQ == 0:
-                x_batch, y_batch = self.data_reader.next_batch(mode='train')
-                feed_dict = {self.inputs_pl: x_batch,
-                             self.labels_pl: y_batch,
-                             self.keep_prob_pl: 0.5}
                 _, _, _, summary = self.sess.run([self.train_op,
                                                   self.mean_loss_op,
                                                   self.mean_accuracy_op,
@@ -131,16 +132,11 @@ class BaseModel(object):
                                                  feed_dict=feed_dict)
                 loss, acc = self.sess.run([self.mean_loss, self.mean_accuracy])
                 print('step: {0:<6}, train_loss= {1:.4f}, train_acc={2:.01%}'.format(train_step, loss, acc))
-                self.save_summary(summary, train_step + self.conf.reload_step)
+                self.save_summary(summary, train_step + self.conf.reload_step, is_train=True)
             else:
-                x_batch, y_batch = self.data_reader.next_batch(mode='train')
-                feed_dict = {self.inputs_pl: x_batch,
-                             self.labels_pl: y_batch,
-                             self.keep_prob_pl: 0.5}
                 self.sess.run([self.train_op, self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
-            if train_step % self.conf.VAL_FREQ == 0:
-                self.is_training = False
-                self.evaluate(train_step)
+            # if train_step % self.conf.VAL_FREQ == 0:
+            #     self.evaluate(train_step)
 
     def evaluate(self, train_step):
         print('start validating.......')
@@ -155,6 +151,8 @@ class BaseModel(object):
             for slice_num in range(x_val.shape[0]):     # for each slice of the validation image
                 feed_dict = {self.inputs_pl: np.expand_dims(x_val[slice_num], 0),
                              self.labels_pl: np.expand_dims(y_val[slice_num], 0),
+                             self.is_training_pl: False,
+                             self.with_dropout_pl: False,
                              self.keep_prob_pl: 1}
                 self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
                 input, mask, mask_pred = self.sess.run([self.inputs_pl,
@@ -180,7 +178,7 @@ class BaseModel(object):
                         dest_path, LABEL_NAMES)
         summary_valid = self.sess.run(self.merged_summary, feed_dict=feed_dict)
         valid_loss, valid_acc = self.sess.run([self.mean_loss, self.mean_accuracy])
-        self.save_summary(summary_valid, train_step + self.conf.reload_step)
+        self.save_summary(summary_valid, train_step + self.conf.reload_step, is_train=False)
         if valid_acc > self.best_validation_accuracy:
             self.best_validation_accuracy = valid_acc
             improved_str = '(improved)'
@@ -205,7 +203,6 @@ class BaseModel(object):
         self.data_reader = DataLoader(self.conf)
         self.numTest = self.data_reader.count_num_samples(mode='test')
         self.num_test_batch = int(self.numTest / self.conf.val_batch_size)
-        self.is_train = False
         print('start testing.......')
         self.sess.run(tf.local_variables_initializer())
         scan_input = np.zeros((0, self.conf.height, self.conf.width, self.conf.Dcut_size, self.conf.channel))

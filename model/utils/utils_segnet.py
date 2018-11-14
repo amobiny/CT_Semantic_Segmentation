@@ -10,50 +10,31 @@ import math
 
 def max_pool(inputs, name):
     with tf.variable_scope(name) as scope:
-        value, index = tf.nn.max_pool_with_argmax(tf.to_double(inputs), ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
+        value, index = tf.nn.max_pool_with_argmax(tf.to_double(inputs), ksize=[1, 2, 2, 2, 1], strides=[1, 2, 2, 2, 1],
                                                   padding='SAME', name=scope.name)
     return tf.to_float(value), index, inputs.get_shape().as_list()
     # here value is the max value, index is the corresponding index, the detail information is here
     # https://www.tensorflow.org/versions/r1.0/api_docs/python/tf/nn/max_pool_with_argmax
 
 
-def conv_layer(bottom, name, shape, is_training, use_vgg=False, vgg_param_dict=None):
+def conv_layer(bottom, name, shape, is_training):
     """
     Inputs:
     bottom: The input image or tensor
     name: corresponding layer's name
     shape: the shape of kernel size
     training_state: represent if the weight should update
-    Output:
-    The output from layers
-    :param use_vgg:
     :param shape:
     """
 
-    def get_conv_filter(val_name):
-        return vgg_param_dict[val_name][0]
-        # so here load the weight for VGG-16, which is kernel, the kernel size for different covolution layers will show in function
-
-    def get_biases(val_name):
-        return vgg_param_dict[val_name][1]
-        # here load the bias for VGG-16, the bias size will be 64,128,256,512,512, also shown in function vgg_param_load
-
     with tf.variable_scope(name) as scope:
-        if use_vgg:
-            init = tf.constant_initializer(get_conv_filter(scope.name))
-            filt = variable_with_weight_decay('weights', initializer=init, shape=shape, wd=False)
-        else:
-            filt = variable_with_weight_decay('weights', initializer=initialization(shape[0], shape[2]),
-                                              shape=shape, wd=False)
+        filt = variable_with_weight_decay('weights', initializer=initialization(shape[0], shape[3]),
+                                          shape=shape, wd=False)
         tf.summary.histogram(scope.name + "weight", filt)
-        conv = tf.nn.conv2d(bottom, filt, [1, 1, 1, 1], padding='SAME')
-        if use_vgg:
-            conv_biases_init = tf.constant_initializer(get_biases(scope.name))
-            conv_biases = variable_with_weight_decay('biases_1', initializer=conv_biases_init, shape=shape[3], wd=False)
-        else:
-            conv_biases = variable_with_weight_decay('biases', initializer=tf.constant_initializer(0.0),
-                                                     shape=shape[3],
-                                                     wd=False)
+        conv = tf.nn.conv3d(bottom, filt, [1, 1, 1, 1, 1], padding='SAME')
+        conv_biases = variable_with_weight_decay('biases', initializer=tf.constant_initializer(0.0),
+                                                 shape=shape[4],
+                                                 wd=False)
         tf.summary.histogram(scope.name + "bias", conv_biases)
         bias = tf.nn.bias_add(conv, conv_biases)
         conv_out = tf.nn.relu(batch_norm(bias, is_training, scope))

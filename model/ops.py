@@ -26,8 +26,8 @@ def bias_variable(name, shape):
                            initializer=initial)
 
 
-def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=True,
-            add_batch_norm=False, add_reg=False, activation=tf.identity):
+def conv_3d(inputs, filter_size, num_filters, layer_name, add_batch_norm, is_train,
+            stride=1, add_reg=True, activation=tf.identity):
     """
     Create a 3D convolution layer
     :param inputs: input array
@@ -50,9 +50,9 @@ def conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_train=Tru
                              filter=weights,
                              strides=[1, stride, stride, stride, 1],
                              padding="SAME")
-        # print('{}: {}'.format(layer_name, layer.get_shape()))
+        print('{}: {}'.format(layer_name, layer.get_shape()))
         if add_batch_norm:
-            layer = batch_norm(layer, is_train)
+            layer = batch_norm(layer, is_train, layer_name)
         else:
             biases = bias_variable(layer_name, [num_filters])
             layer += biases
@@ -96,9 +96,9 @@ def deconv_3d(inputs, filter_size, num_filters, layer_name, stride=1, add_batch_
                                            strides=[stride, stride, stride],
                                            padding="SAME",
                                            use_bias=False)
-        # print('{}: {}'.format(layer_name, layer.get_shape()))
+        print('{}: {}'.format(layer_name, layer.get_shape()))
         if add_batch_norm:
-            layer = batch_norm(layer, is_train)
+            layer = batch_norm(layer, is_train, layer_name)
         else:
             biases = bias_variable(layer_name, [num_filters])
             layer += biases
@@ -126,7 +126,7 @@ def BN_Relu_conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_t
     num_in_channel = get_num_channels(inputs)
     with tf.variable_scope(layer_name):
         if add_batch_norm:
-            inputs = batch_norm(inputs, is_train)
+            inputs = batch_norm(inputs, is_train, layer_name)
         if use_relu:
             inputs = tf.nn.relu(inputs)
         shape = [filter_size, filter_size, filter_size, num_in_channel, num_filters]
@@ -140,7 +140,7 @@ def BN_Relu_conv_3d(inputs, filter_size, num_filters, layer_name, stride=1, is_t
     return layer
 
 
-def max_pool(x, ksize, name):
+def max_pool(x, ksize, stride, name):
     """
     Create a 3D max-pooling layer
     :param x: input to max-pooling layer
@@ -150,7 +150,7 @@ def max_pool(x, ksize, name):
     """
     maxpool = tf.nn.max_pool3d(x,
                                ksize=[1, ksize, ksize, ksize, 1],
-                               strides=[1, 2, 2, 2, 1],
+                               strides=[1, stride, stride, stride, 1],
                                padding="SAME",
                                name=name)
     print('{}: {}'.format(name, maxpool.get_shape()))
@@ -166,33 +166,39 @@ def avg_pool(x, ksize, stride, scope):
                             name=scope)
 
 
-def batch_norm(inputs, is_training, scope='BN', decay=0.999, epsilon=1e-3):
-    """
-    creates a batch normalization layer
-    :param inputs: input array
-    :param is_training: boolean for differentiating train and test
-    :param scope: scope name
-    :param decay:
-    :param epsilon:
-    :return: normalized input
-    """
+def batch_norm(bias_input, is_training, scope):
     with tf.variable_scope(scope):
-        scale = tf.Variable(tf.ones([inputs.get_shape()[-1]]))
-        beta = tf.Variable(tf.zeros([inputs.get_shape()[-1]]))
-        pop_mean = tf.Variable(tf.zeros([inputs.get_shape()[-1]]), trainable=False)
-        pop_var = tf.Variable(tf.ones([inputs.get_shape()[-1]]), trainable=False)
+        return tf.cond(is_training,
+                       lambda: tf.contrib.layers.batch_norm(bias_input, is_training=True, center=False, scope=scope),
+                       lambda: tf.contrib.layers.batch_norm(bias_input, is_training=False, center=False, reuse=True, scope=scope))
 
-        if is_training:
-            if len(inputs.get_shape().as_list()) == 5:  # For 3D convolutional layers
-                batch_mean, batch_var = tf.nn.moments(inputs, [0, 1, 2, 3])
-            else:  # For fully-connected layers
-                batch_mean, batch_var = tf.nn.moments(inputs, [0])
-            train_mean = tf.assign(pop_mean, pop_mean * decay + batch_mean * (1 - decay))
-            train_var = tf.assign(pop_var, pop_var * decay + batch_var * (1 - decay))
-            with tf.control_dependencies([train_mean, train_var]):
-                return tf.nn.batch_normalization(inputs, batch_mean, batch_var, beta, scale, epsilon)
-        else:
-            return tf.nn.batch_normalization(inputs, pop_mean, pop_var, beta, scale, epsilon)
+# def batch_norm(inputs, is_training, scope='BN', decay=0.999, epsilon=1e-3):
+#     """
+#     creates a batch normalization layer
+#     :param inputs: input array
+#     :param is_training: boolean for differentiating train and test
+#     :param scope: scope name
+#     :param decay:
+#     :param epsilon:
+#     :return: normalized input
+#     """
+#     with tf.variable_scope(scope):
+#         scale = tf.Variable(tf.ones([inputs.get_shape()[-1]]))
+#         beta = tf.Variable(tf.zeros([inputs.get_shape()[-1]]))
+#         pop_mean = tf.Variable(tf.zeros([inputs.get_shape()[-1]]), trainable=False)
+#         pop_var = tf.Variable(tf.ones([inputs.get_shape()[-1]]), trainable=False)
+#
+#         if is_training:
+#             if len(inputs.get_shape().as_list()) == 5:  # For 3D convolutional layers
+#                 batch_mean, batch_var = tf.nn.moments(inputs, [0, 1, 2, 3])
+#             else:  # For fully-connected layers
+#                 batch_mean, batch_var = tf.nn.moments(inputs, [0])
+#             train_mean = tf.assign(pop_mean, pop_mean * decay + batch_mean * (1 - decay))
+#             train_var = tf.assign(pop_var, pop_var * decay + batch_var * (1 - decay))
+#             with tf.control_dependencies([train_mean, train_var]):
+#                 return tf.nn.batch_normalization(inputs, batch_mean, batch_var, beta, scale, epsilon)
+#         else:
+#             return tf.nn.batch_normalization(inputs, pop_mean, pop_var, beta, scale, epsilon)
 
 
 def prelu(x, name=None):
