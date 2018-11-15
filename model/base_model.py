@@ -235,6 +235,7 @@ class BaseModel(object):
         pred_tot = []  # list of mean predictions; each of shape (h, w, d)
         var_tot = []  # list of variance predictions (i.e. uncertainties); each of shape (h, w, d)
         num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
+        hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
         self.sess.run(tf.local_variables_initializer())
         scan_num = 0
         for batch_step in tqdm(range(num_batch)):
@@ -269,13 +270,32 @@ class BaseModel(object):
             prob_variance = np.var(scan_mask_prob_mc, axis=0)
             pred = np.argmax(prob_mean, axis=-1)
             var_one = var_calculate(pred, prob_variance)
-
+            hist += get_hist(pred.flatten(), scan_mask.flatten(), num_cls=self.conf.num_cls)
             all_input.append(scan_input)
             all_mask.append(scan_mask)
             pred_tot.append(pred)
             var_tot.append(var_one)
             scan_num += 1
+        IOU, ACC = compute_iou(hist)
+        mean_IOU = np.mean(IOU)
+        loss, acc = self.sess.run([self.mean_loss, self.mean_accuracy])
 
+        if dataset == "valid":  # save the summaries and improved model in validation mode
+            summary_valid = self.sess.run(self.merged_summary, feed_dict=feed_dict)
+            self.save_summary(summary_valid, train_step + self.conf.reload_step, is_train=False)
+            if loss < self.best_validation_loss:
+                self.best_validation_loss = loss
+                print('>>>>>>>> model validation loss improved; saving the model......')
+                self.save(train_step + self.conf.reload_step)
+
+        print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}'.format(train_step, loss, acc))
+        print('- IOU: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
+              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}, mean_IoU={6:.01%}'
+              .format(IOU[0], IOU[1], IOU[2], IOU[3], IOU[4], IOU[5], mean_IOU))
+        print('- ACC: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
+              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}'
+              .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
+        print('-' * 60)
         self.input_ = all_input
         self.label_ = all_mask
         self.pred_ = pred_tot

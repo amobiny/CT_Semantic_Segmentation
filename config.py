@@ -27,7 +27,7 @@ flags.DEFINE_string('train_data_dir', '/data_preparation/our_data/4_correctMask_
 flags.DEFINE_string('valid_data_dir', '/data_preparation/our_data/4_correctMask_normalized/new_test/', 'Validation data ')
 flags.DEFINE_string('test_data_dir', '/data_preparation/our_data/4_correctMask_normalized/new_test/', 'Test data')
 flags.DEFINE_boolean('random_crop', True, 'Crops the input and output randomly during training time only')
-flags.DEFINE_list('crop_size', [64, 64, 32], 'crop sizes')
+flags.DEFINE_list('crop_size', [256, 256, 32], 'crop sizes')
 flags.DEFINE_boolean('data_augment', False, 'Adds augmentation to data')
 flags.DEFINE_integer('max_angle', 40, 'Maximum rotation angle along each axis; when applying augmentation')
 flags.DEFINE_integer('height', 512, 'Original image (and Network if random_crop is off) height size')

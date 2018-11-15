@@ -12,7 +12,6 @@ class VNet(BaseModel):
                  act_fcn=prelu):
 
         super(VNet, self).__init__(sess, conf)
-        # super().__init__(sess, conf)  Python3
         self.num_levels = num_levels
         self.num_convs = num_convs
         self.bottom_convs = bottom_convs
