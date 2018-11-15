@@ -48,7 +48,7 @@ def label_to_color_image(label):
     return colormap[label]
 
 
-def vis_segmentation(image, seg_map_gt, seg_map_pred, label_names, image_name):
+def vis_segmentation(image, seg_map_gt, seg_map_pred, var_map_pred=None, label_names=None, image_name=None):
     """Visualizes input image, segmentation map and overlay view."""
     FULL_LABEL_MAP = np.arange(len(label_names)).reshape(len(label_names), 1)
     FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
@@ -75,10 +75,15 @@ def vis_segmentation(image, seg_map_gt, seg_map_pred, label_names, image_name):
     plt.title('prediction map')
 
     plt.subplot(grid_spec[3])
-    plt.imshow(image, cmap='gray')
-    plt.imshow(seg_image, alpha=0.4)
-    plt.axis('off')
-    plt.title('prediction overlay')
+    if var_map_pred is None:
+        plt.imshow(image, cmap='gray')
+        plt.imshow(seg_image, alpha=0.4)
+        plt.axis('off')
+        plt.title('prediction overlay')
+    else:
+        plt.imshow(var_map_pred, cmap='Greys')
+        plt.axis('off')
+        plt.title('model uncertainty')
 
     unique_labels = np.unique(np.concatenate((np.unique(seg_map_gt), np.unique(seg_map_pred)), 0)).astype(np.int32)
     ax = plt.subplot(grid_spec[4])
@@ -91,12 +96,18 @@ def vis_segmentation(image, seg_map_gt, seg_map_pred, label_names, image_name):
     plt.savefig(image_name)
 
 
-def plot_save_preds(images, masks, mask_preds, path, label_names):
+def plot_save_preds(images, masks, mask_preds, var_preds=None, path=None, label_names=None):
     number = 0
-    for image, mask, mask_pred in zip(images, masks, mask_preds):
-        img_name = os.path.join(path, str(number)+'.png')
-        vis_segmentation(image, mask, mask_pred, label_names, img_name)
-        number += 1
+    if var_preds is None:
+        for image, mask, mask_pred in zip(images, masks, mask_preds):
+            img_name = os.path.join(path, str(number)+'.png')
+            vis_segmentation(image, mask, mask_pred, label_names, img_name)
+            number += 1
+    else:
+        for image, mask, mask_pred, var_pred in zip(images, masks, mask_preds, var_preds):
+            img_name = os.path.join(path, str(number)+'.png')
+            vis_segmentation(image, mask, mask_pred, var_pred, label_names, img_name)
+            number += 1
 
 
 if __name__ == '__main__':

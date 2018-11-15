@@ -1,8 +1,10 @@
 import tensorflow as tf
+from tqdm import tqdm
+
 from Data_Loader import DataLoader
 from utils.plot_utils import plot_save_preds
 from utils.loss_utils import cross_entropy, dice_coeff, weighted_cross_entropy
-from utils.eval_utils import get_hist, compute_iou
+from utils.eval_utils import get_hist, compute_iou, var_calculate
 import os
 import numpy as np
 
@@ -193,10 +195,10 @@ class BaseModel(object):
                              self.keep_prob_pl: 1}
                 self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
                 inputs, mask, mask_pred = self.sess.run([self.inputs_pl,
-                                                        self.labels_pl,
-                                                        self.y_pred], feed_dict=feed_dict)
+                                                         self.labels_pl,
+                                                         self.y_pred], feed_dict=feed_dict)
                 hist += get_hist(mask_pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
-                idx_d, idx_u = slice_num*self.conf.Dcut_size, (slice_num+1)*self.conf.Dcut_size
+                idx_d, idx_u = slice_num * self.conf.Dcut_size, (slice_num + 1) * self.conf.Dcut_size
                 scan_input[:, :, idx_d:idx_u] = np.squeeze(inputs, axis=0)
                 scan_mask[:, :, idx_d:idx_u] = np.squeeze(mask, axis=0)
                 scan_mask_pred[:, :, idx_d:idx_u] = np.squeeze(mask_pred, axis=0)
@@ -229,65 +231,79 @@ class BaseModel(object):
         self.pred_ = all_pred
 
     def MC_evaluate(self, dataset='valid', train_step=None):
+        all_input, all_mask = [], []
         pred_tot = []  # list of mean predictions; each of shape (h, w, d)
         var_tot = []  # list of variance predictions (i.e. uncertainties); each of shape (h, w, d)
         num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
         self.sess.run(tf.local_variables_initializer())
-
         scan_num = 0
-        for batch_step in range(num_batch):
+        for batch_step in tqdm(range(num_batch)):
             data_x, data_y = self.data_reader.next_batch(num=scan_num, mode=dataset)
             depth = data_x.shape[0] * data_x.shape[-2]
             scan_input = np.zeros((self.conf.height, self.conf.width, depth, self.conf.channel))
             scan_mask = np.zeros((self.conf.height, self.conf.width, depth))
             scan_mask_prob = np.zeros((self.conf.height, self.conf.width, depth, self.conf.num_cls))
             scan_mask_pred = np.zeros((self.conf.height, self.conf.width, depth))
-            scan_input_mc, scan_mask_mc, scan_mask_pred_mc, scan_mask_prob_mc = [], [], [], []
-            for mc_iter in self.conf.monte_carlo_simulations:
+            scan_mask_pred_mc, scan_mask_prob_mc = [], []
+            for mc_iter in range(self.conf.monte_carlo_simulations):
                 for slice_num in range(data_x.shape[0]):  # for each slice of the 3D image
                     feed_dict = {self.inputs_pl: np.expand_dims(data_x[slice_num], 0),
                                  self.labels_pl: np.expand_dims(data_y[slice_num], 0),
                                  self.is_training_pl: False,
-                                 self.with_dropout_pl: False,
-                                 self.keep_prob_pl: 1}
-                    input, mask, mask_prob, mask_pred = self.sess.run([self.inputs_pl,
-                                                                       self.labels_pl,
-                                                                       self.y_prob,
-                                                                       self.y_pred], feed_dict=feed_dict)
+                                 self.with_dropout_pl: True,
+                                 self.keep_prob_pl: 0.5}
+                    inputs, mask, mask_prob, mask_pred = self.sess.run([self.inputs_pl,
+                                                                        self.labels_pl,
+                                                                        self.y_prob,
+                                                                        self.y_pred], feed_dict=feed_dict)
                     idx_d, idx_u = slice_num * self.conf.Dcut_size, (slice_num + 1) * self.conf.Dcut_size
-                    scan_input[:, :, idx_d:idx_u] = np.squeeze(input, axis=0)
-                    scan_mask[:, :, idx_d:idx_u] = np.squeeze(mask, axis=0)
                     scan_mask_prob[:, :, idx_d:idx_u] = np.squeeze(mask_prob, axis=0)
                     scan_mask_pred[:, :, idx_d:idx_u] = np.squeeze(mask_pred, axis=0)
-                scan_input_mc.append(scan_input)
-                scan_mask_mc.append(scan_mask)
+                    if not mc_iter:
+                        scan_input[:, :, idx_d:idx_u] = np.squeeze(inputs, axis=0)
+                        scan_mask[:, :, idx_d:idx_u] = np.squeeze(mask, axis=0)
+
                 scan_mask_prob_mc.append(scan_mask_prob)
                 scan_mask_pred_mc.append(scan_mask_pred)
             prob_mean = np.nanmean(scan_mask_prob_mc, axis=0)
             prob_variance = np.var(scan_mask_prob_mc, axis=0)
-            pred = np.reshape(np.argmax(prob_mean, axis=-1), [-1])
+            pred = np.argmax(prob_mean, axis=-1)
+            var_one = var_calculate(pred, prob_variance)
+
+            all_input.append(scan_input)
+            all_mask.append(scan_mask)
+            pred_tot.append(pred)
+            var_tot.append(var_one)
             scan_num += 1
 
+        self.input_ = all_input
+        self.label_ = all_mask
+        self.pred_ = pred_tot
+        self.pred_var = var_tot
+
     def visualize(self, num_samples, train_step, mode='valid'):
+
+        scan_index = np.random.randint(low=0, high=len(self.pred_), size=num_samples)
+        slice_index = np.array([np.random.randint(low=0, high=self.pred_[si].shape[-1])
+                                for si in scan_index])
+        if mode == 'valid':
+            dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
+        elif mode == "test":
+            dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step) + '_test')
+        if not os.path.exists(dest_path):
+            os.makedirs(dest_path)
+
+        x_plot = np.concatenate([np.expand_dims(self.input_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
+                                 for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
+        y_plot = np.concatenate([np.expand_dims(self.label_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
+                                 for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
+        pred_plot = np.concatenate([np.expand_dims(self.pred_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
+                                    for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
+        print('saving sample prediction images....... ')
+
         if not self.conf.bayes:
-            scan_index = np.random.randint(low=0, high=len(self.pred_), size=num_samples)
-            slice_index = np.array([np.random.randint(low=0, high=self.pred_[si].shape[-1])
-                                  for si in scan_index])
-            if mode == 'valid':
-                dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
-            elif mode == "test":
-                dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step) + '_test')
-            if not os.path.exists(dest_path):
-                os.makedirs(dest_path)
-
-            x_plot = np.concatenate([np.expand_dims(self.input_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
-             for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
-            y_plot = np.concatenate([np.expand_dims(self.label_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
-             for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
-            pred_plot = np.concatenate([np.expand_dims(self.pred_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
-             for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
-
-            print('saving sample prediction images....... ')
             plot_save_preds(x_plot, y_plot, pred_plot, dest_path, np.array(self.conf.label_name))
         else:
-            pass
+            var_plot = np.concatenate([np.expand_dims(self.pred_var[scan_idx][:, :, slice_idx].squeeze(), axis=0)
+                                       for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
+            plot_save_preds(x_plot, y_plot, pred_plot, var_plot, dest_path, np.array(self.conf.label_name))
