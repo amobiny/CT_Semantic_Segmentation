@@ -115,7 +115,7 @@ def plot_save_preds(images, masks, mask_preds, var_preds=None, path=None, label_
 if __name__ == '__main__':
     LABEL_NAMES = np.asarray(['background', 'liver', 'spleen', 'kidney', 'bone', 'vessel'])
     File_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation/data_preparation/' \
-                'our_data/4_correctMask_normalized/train/PV_anon_1579_5_232_ARLS1.h5'
+                'our_data/4_correctMask_normalized/new_train/PV_anon_1579_5_232_ARLS1.h5'
     h5f = h5py.File(File_path, 'r')
     x = np.squeeze(h5f['x'][:])
     x_norm = np.squeeze(h5f['x_norm'][:])
@@ -123,6 +123,6 @@ if __name__ == '__main__':
     h5f.close()
     image = x_norm[:, :, 10]
     true_mask = y[:, :, 10]
-    vis_segmentation(image, true_mask, true_mask, LABEL_NAMES)
+    vis_segmentation(image, true_mask, true_mask, label_names=LABEL_NAMES, image_name='test.png')
 
 print()
