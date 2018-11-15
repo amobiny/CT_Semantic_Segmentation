@@ -4,8 +4,8 @@ from config import args
 # from model.FCNet import FCN
 # from model.Tiramisu import Tiramisu
 # from model.DenseNet import DenseNet
-from model.VNet import VNet as Model
-# from model.SegNet import SegNet as Model
+# from model.VNet import VNet as Model
+from model.SegNet import SegNet as Model
 
 import os
 from utils.other_utils import write_spec

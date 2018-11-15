@@ -126,7 +126,7 @@ class BaseModel(object):
                          self.labels_pl: y_batch,
                          self.is_training_pl: True,
                          self.with_dropout_pl: True,
-                         self.keep_prob_pl: 0.5}
+                         self.keep_prob_pl: self.conf.keep_prob}
             if train_step % self.conf.SUMMARY_FREQ == 0:
                 _, _, _, summary = self.sess.run([self.train_op,
                                                   self.mean_loss_op,
@@ -140,10 +140,7 @@ class BaseModel(object):
                 self.sess.run([self.train_op, self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
             if train_step % self.conf.VAL_FREQ == 0:
                 print('-' * 25 + 'Validation' + '-' * 25)
-                if not self.conf.bayes:
-                    self.normal_evaluate(dataset='valid', train_step=train_step)
-                else:
-                    self.MC_evaluate(dataset='valid', train_step=train_step)
+                self.normal_evaluate(dataset='valid', train_step=train_step)
                 self.visualize(num_samples=20, train_step=train_step, mode='valid')
 
     def test(self, step_num):
@@ -157,8 +154,11 @@ class BaseModel(object):
         self.num_test_batch = int(self.numTest / self.conf.val_batch_size)
 
         print('-' * 25 + 'Test' + '-' * 25)
-        self.normal_evaluate(dataset='test')
-        self.visualize(num_samples=20, step=step_num, mode='test')
+        if not self.conf.bayes:
+            self.normal_evaluate(dataset='test')
+        else:
+            self.MC_evaluate(dataset='valid')
+        self.visualize(num_samples=20, train_step=step_num, mode='test')
 
     def save(self, step):
         print('----> Saving the model at step #{0}'.format(step))
@@ -230,7 +230,7 @@ class BaseModel(object):
         self.label_ = all_mask
         self.pred_ = all_pred
 
-    def MC_evaluate(self, dataset='valid', train_step=None):
+    def MC_evaluate(self, dataset='valid'):
         all_input, all_mask = [], []
         pred_tot = []  # list of mean predictions; each of shape (h, w, d)
         var_tot = []  # list of variance predictions (i.e. uncertainties); each of shape (h, w, d)
@@ -252,7 +252,7 @@ class BaseModel(object):
                                  self.labels_pl: np.expand_dims(data_y[slice_num], 0),
                                  self.is_training_pl: False,
                                  self.with_dropout_pl: True,
-                                 self.keep_prob_pl: 0.5}
+                                 self.keep_prob_pl: self.conf.keep_prob}
                     inputs, mask, mask_prob, mask_pred = self.sess.run([self.inputs_pl,
                                                                         self.labels_pl,
                                                                         self.y_prob,
@@ -278,17 +278,7 @@ class BaseModel(object):
             scan_num += 1
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
-        loss, acc = self.sess.run([self.mean_loss, self.mean_accuracy])
 
-        if dataset == "valid":  # save the summaries and improved model in validation mode
-            summary_valid = self.sess.run(self.merged_summary, feed_dict=feed_dict)
-            self.save_summary(summary_valid, train_step + self.conf.reload_step, is_train=False)
-            if loss < self.best_validation_loss:
-                self.best_validation_loss = loss
-                print('>>>>>>>> model validation loss improved; saving the model......')
-                self.save(train_step + self.conf.reload_step)
-
-        print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}'.format(train_step, loss, acc))
         print('- IOU: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
               'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}, mean_IoU={6:.01%}'
               .format(IOU[0], IOU[1], IOU[2], IOU[3], IOU[4], IOU[5], mean_IOU))
@@ -310,8 +300,6 @@ class BaseModel(object):
             dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
         elif mode == "test":
             dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step) + '_test')
-        if not os.path.exists(dest_path):
-            os.makedirs(dest_path)
 
         x_plot = np.concatenate([np.expand_dims(self.input_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
                                  for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
@@ -321,9 +309,10 @@ class BaseModel(object):
                                     for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
         print('saving sample prediction images....... ')
 
-        if not self.conf.bayes:
-            plot_save_preds(x_plot, y_plot, pred_plot, dest_path, np.array(self.conf.label_name))
+        if not self.conf.bayes or mode == 'valid':
+            # run it either in validation mode or when non-bayesian network
+            plot_save_preds(x_plot, y_plot, pred_plot, path=dest_path, label_names=np.array(self.conf.label_name))
         else:
             var_plot = np.concatenate([np.expand_dims(self.pred_var[scan_idx][:, :, slice_idx].squeeze(), axis=0)
                                        for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
-            plot_save_preds(x_plot, y_plot, pred_plot, var_plot, dest_path, np.array(self.conf.label_name))
+            plot_save_preds(x_plot, y_plot, pred_plot, var_plot, dest_path + 'bayes', np.array(self.conf.label_name))

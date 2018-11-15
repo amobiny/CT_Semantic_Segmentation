@@ -60,7 +60,7 @@ class VNet(BaseModel):
             if i == num_convolutions - 1:
                 x = x + layer_input
             x = self.act_fcn(x, name='prelu_' + str(i + 1))
-            x = tf.nn.dropout(x, self.keep_prob_pl)
+            x = tf.layers.dropout(x, rate=(1 - self.keep_prob_pl), training=self.with_dropout_pl)
         return x
 
     def conv_block_up(self, layer_input, fine_grained_features, num_convolutions):
@@ -76,7 +76,7 @@ class VNet(BaseModel):
             if i == num_convolutions - 1:
                 x = x + layer_input
             x = self.act_fcn(x, name='prelu_' + str(i + 1))
-            x = tf.nn.dropout(x, self.keep_prob_pl)
+            x = tf.layers.dropout(x, rate=(1 - self.keep_prob_pl), training=self.with_dropout_pl)
         return x
 
     def down_conv(self, x):
