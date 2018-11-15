@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
 # path of raw hdf5 scans
-all_files = glob.glob(project_path + '/data_preparation/our_data/2_hdf5_files/*.h5')
+all_files = glob.glob(project_path + '/data_preparation/our_data/2_new_hdf5_files/*.h5')
 dest_path = project_path + '/data_preparation/our_data/4_correctMask_normalized/'
 if not os.path.exists(dest_path):
     os.makedirs(dest_path)

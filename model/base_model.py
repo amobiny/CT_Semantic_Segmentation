@@ -1,10 +1,10 @@
 import tensorflow as tf
 from Data_Loader import DataLoader
-from plot_utils import plot_save_preds
-from utils import cross_entropy, dice_coeff, compute_iou, weighted_cross_entropy, get_hist
+from utils.plot_utils import plot_save_preds
+from utils.loss_utils import cross_entropy, dice_coeff, weighted_cross_entropy
+from utils.eval_utils import get_hist, compute_iou
 import os
 import numpy as np
-import time
 
 
 class BaseModel(object):
@@ -27,6 +27,7 @@ class BaseModel(object):
 
     def loss_func(self):
         with tf.name_scope('Loss'):
+            self.y_prob = tf.nn.softmax(self.logits, axis=-1)
             y_one_hot = tf.one_hot(self.labels_pl, depth=self.conf.num_cls, axis=4, name='y_one_hot')
             if self.conf.weighted_loss:
                 loss = weighted_cross_entropy(y_one_hot, self.logits, self.conf.num_cls)
@@ -80,9 +81,9 @@ class BaseModel(object):
 
     def configure_summary(self):
         if self.conf.random_crop:
-            slice = int(self.conf.crop_size[-1]/2)
+            slice = int(self.conf.crop_size[-1] / 2)
         else:
-            slice = int(self.conf.depth/2)
+            slice = int(self.conf.depth / 2)
         summary_list = [tf.summary.scalar('learning_rate', self.learning_rate),
                         tf.summary.scalar('loss', self.mean_loss),
                         tf.summary.scalar('accuracy', self.mean_accuracy),
@@ -108,7 +109,7 @@ class BaseModel(object):
 
     def train(self):
         self.sess.run(tf.local_variables_initializer())
-        self.best_validation_accuracy = 0
+        self.best_validation_loss = 1000
         if self.conf.reload_step > 0:
             self.reload(self.conf.reload_step)
             print('----> Continue Training from step #{}'.format(self.conf.reload_step))
@@ -135,126 +136,35 @@ class BaseModel(object):
                 self.save_summary(summary, train_step + self.conf.reload_step, is_train=True)
             else:
                 self.sess.run([self.train_op, self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
-            # if train_step % self.conf.VAL_FREQ == 0:
-            #     self.evaluate(train_step)
-
-    def evaluate(self, train_step):
-        print('start validating.......')
-        self.sess.run(tf.local_variables_initializer())
-        scan_input = np.zeros((0, self.conf.height, self.conf.width, self.conf.Dcut_size, self.conf.channel))
-        scan_mask = np.zeros((0, self.conf.height, self.conf.width, self.conf.Dcut_size))
-        scan_mask_pred = np.zeros((0, self.conf.height, self.conf.width, self.conf.Dcut_size))
-        scan_num = 0
-        hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
-        for step in range(self.num_val_batch):
-            x_val, y_val = self.data_reader.next_batch(num=scan_num, mode='valid')
-            for slice_num in range(x_val.shape[0]):     # for each slice of the validation image
-                feed_dict = {self.inputs_pl: np.expand_dims(x_val[slice_num], 0),
-                             self.labels_pl: np.expand_dims(y_val[slice_num], 0),
-                             self.is_training_pl: False,
-                             self.with_dropout_pl: False,
-                             self.keep_prob_pl: 1}
-                self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
-                input, mask, mask_pred = self.sess.run([self.inputs_pl,
-                                                        self.labels_pl,
-                                                        self.y_pred], feed_dict=feed_dict)
-                scan_input = np.concatenate((scan_input, input), axis=0)
-                scan_mask = np.concatenate((scan_mask, mask), axis=0)
-                scan_mask_pred = np.concatenate((scan_mask_pred, mask_pred), axis=0)
-                hist += get_hist(mask_pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
-            scan_num += 1
-        IOU, ACC = compute_iou(hist)
-        mean_IOU = np.mean(IOU)
-        LABEL_NAMES = np.asarray(['background', 'liver', 'spleen', 'kidney', 'bone', 'vessel'])
-        slice_idx = np.random.randint(low=0, high=scan_mask_pred.shape[0], size=10)
-        depth_idx = np.random.randint(low=0, high=scan_mask_pred.shape[-1], size=10)
-        dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
-        if not os.path.exists(dest_path):
-            os.makedirs(dest_path)
-        print('saving sample prediction images....... ')
-        plot_save_preds(np.squeeze(scan_input[slice_idx, :, :, depth_idx, :]),
-                        scan_mask[slice_idx, :, :, depth_idx],
-                        scan_mask_pred[slice_idx, :, :, depth_idx],
-                        dest_path, LABEL_NAMES)
-        summary_valid = self.sess.run(self.merged_summary, feed_dict=feed_dict)
-        valid_loss, valid_acc = self.sess.run([self.mean_loss, self.mean_accuracy])
-        self.save_summary(summary_valid, train_step + self.conf.reload_step, is_train=False)
-        if valid_acc > self.best_validation_accuracy:
-            self.best_validation_accuracy = valid_acc
-            improved_str = '(improved)'
-            self.save(train_step + self.conf.reload_step)
-        else:
-            improved_str = ''
-        print('-' * 25 + 'Validation' + '-' * 25)
-        print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}{3}'
-              .format(train_step, valid_loss, valid_acc, improved_str))
-        print('- IOU: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
-              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}, Average={6:.01%}'
-              .format(IOU[0], IOU[1], IOU[2], IOU[3], IOU[4], IOU[5], mean_IOU))
-        print('- ACC: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
-              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}'
-              .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
-        print('-' * 60)
+            if train_step % self.conf.VAL_FREQ == 0:
+                print('-' * 25 + 'Validation' + '-' * 25)
+                if not self.conf.bayes:
+                    self.normal_evaluate(dataset='valid', train_step=train_step)
+                else:
+                    self.MC_evaluate(dataset='valid', train_step=train_step)
+                self.visualize(num_samples=20, train_step=train_step, mode='valid')
 
     def test(self, step_num):
         self.sess.run(tf.local_variables_initializer())
+
         print('loading the model.......')
         self.reload(step_num)
+
         self.data_reader = DataLoader(self.conf)
         self.numTest = self.data_reader.count_num_samples(mode='test')
         self.num_test_batch = int(self.numTest / self.conf.val_batch_size)
-        print('start testing.......')
-        self.sess.run(tf.local_variables_initializer())
-        scan_input = np.zeros((0, self.conf.height, self.conf.width, self.conf.Dcut_size, self.conf.channel))
-        scan_mask = np.zeros((0, self.conf.height, self.conf.width, self.conf.Dcut_size))
-        scan_mask_pred = np.zeros((0, self.conf.height, self.conf.width, self.conf.Dcut_size))
-        scan_num = 0
-        hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
-        for step in range(self.num_test_batch):
-            x_test, y_test = self.data_reader.next_batch(num=scan_num, mode='test')
-            for slice_num in range(x_test.shape[0]):     # for each slice of the validation image
-                feed_dict = {self.inputs_pl: np.expand_dims(x_test[slice_num], 0),
-                             self.labels_pl: np.expand_dims(y_test[slice_num], 0),
-                             self.keep_prob_pl: 1}
-                self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
-                input, mask, mask_pred = self.sess.run([self.inputs_pl,
-                                                        self.labels_pl,
-                                                        self.y_pred], feed_dict=feed_dict)
-                scan_input = np.concatenate((scan_input, input), axis=0)
-                scan_mask = np.concatenate((scan_mask, mask), axis=0)
-                scan_mask_pred = np.concatenate((scan_mask_pred, mask_pred), axis=0)
-                hist += get_hist(mask_pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
-            scan_num += 1
-        IOU, ACC = compute_iou(hist)
-        mean_IOU = np.mean(IOU)
-        LABEL_NAMES = np.asarray(['background', 'liver', 'spleen', 'kidney', 'bone', 'vessel'])
-        slice_idx = np.random.randint(low=0, high=scan_mask_pred.shape[0], size=10)
-        depth_idx = np.random.randint(low=0, high=scan_mask_pred.shape[-1], size=10)
-        dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
-        if not os.path.exists(dest_path):
-            os.makedirs(dest_path)
-        print('saving sample prediction images....... ')
-        plot_save_preds(np.squeeze(scan_input[slice_idx, :, :, depth_idx, :]),
-                        scan_mask[slice_idx, :, :, depth_idx],
-                        scan_mask_pred[slice_idx, :, :, depth_idx],
-                        dest_path, LABEL_NAMES)
-        print('-' * 25 + 'Validation' + '-' * 25)
-        print('test_loss= {0:.4f}, test_acc={1:.01%}'.format(test_loss, test_acc))
-        print('- IOU: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
-              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}, Average={6:.01%}'
-              .format(IOU[0], IOU[1], IOU[2], IOU[3], IOU[4], IOU[5], mean_IOU))
-        print('- ACC: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
-              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}'
-              .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
-        print('-' * 60)
+
+        print('-' * 25 + 'Test' + '-' * 25)
+        self.normal_evaluate(dataset='test')
+        self.visualize(num_samples=20, step=step_num, mode='test')
 
     def save(self, step):
         print('----> Saving the model at step #{0}'.format(step))
-        checkpoint_path = os.path.join(self.conf.modeldir+self.conf.run_name, self.conf.model_name)
+        checkpoint_path = os.path.join(self.conf.modeldir + self.conf.run_name, self.conf.model_name)
         self.saver.save(self.sess, checkpoint_path, global_step=step)
 
     def reload(self, step):
-        checkpoint_path = os.path.join(self.conf.modeldir+self.conf.run_name, self.conf.model_name)
+        checkpoint_path = os.path.join(self.conf.modeldir + self.conf.run_name, self.conf.model_name)
         model_path = checkpoint_path + '-' + str(step)
         if not os.path.exists(model_path + '.meta'):
             print('----> No such checkpoint found', model_path)
@@ -262,3 +172,122 @@ class BaseModel(object):
         print('----> Restoring the model...')
         self.saver.restore(self.sess, model_path)
         print('----> Model successfully restored')
+
+    def normal_evaluate(self, dataset='valid', train_step=None):
+        num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
+        self.sess.run(tf.local_variables_initializer())
+        hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
+        all_input, all_mask, all_pred = [], [], []
+        scan_num = 0
+        for batch_step in range(num_batch):
+            data_x, data_y = self.data_reader.next_batch(num=scan_num, mode=dataset)
+            depth = data_x.shape[0] * data_x.shape[-2]
+            scan_input = np.zeros((self.conf.height, self.conf.width, depth, self.conf.channel))
+            scan_mask = np.zeros((self.conf.height, self.conf.width, depth))
+            scan_mask_pred = np.zeros((self.conf.height, self.conf.width, depth))
+            for slice_num in range(data_x.shape[0]):  # for each slice of the 3D image
+                feed_dict = {self.inputs_pl: np.expand_dims(data_x[slice_num], 0),
+                             self.labels_pl: np.expand_dims(data_y[slice_num], 0),
+                             self.is_training_pl: False,
+                             self.with_dropout_pl: False,
+                             self.keep_prob_pl: 1}
+                self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
+                inputs, mask, mask_pred = self.sess.run([self.inputs_pl,
+                                                        self.labels_pl,
+                                                        self.y_pred], feed_dict=feed_dict)
+                hist += get_hist(mask_pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
+                idx_d, idx_u = slice_num*self.conf.Dcut_size, (slice_num+1)*self.conf.Dcut_size
+                scan_input[:, :, idx_d:idx_u] = np.squeeze(inputs, axis=0)
+                scan_mask[:, :, idx_d:idx_u] = np.squeeze(mask, axis=0)
+                scan_mask_pred[:, :, idx_d:idx_u] = np.squeeze(mask_pred, axis=0)
+            all_input.append(scan_input)
+            all_mask.append(scan_mask)
+            all_pred.append(scan_mask_pred)
+            scan_num += 1
+        IOU, ACC = compute_iou(hist)
+        mean_IOU = np.mean(IOU)
+        loss, acc = self.sess.run([self.mean_loss, self.mean_accuracy])
+
+        if dataset == "valid":  # save the summaries and improved model in validation mode
+            summary_valid = self.sess.run(self.merged_summary, feed_dict=feed_dict)
+            self.save_summary(summary_valid, train_step + self.conf.reload_step, is_train=False)
+            if loss < self.best_validation_loss:
+                self.best_validation_loss = loss
+                print('>>>>>>>> model validation loss improved; saving the model......')
+                self.save(train_step + self.conf.reload_step)
+
+        print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}'.format(train_step, loss, acc))
+        print('- IOU: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
+              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}, mean_IoU={6:.01%}'
+              .format(IOU[0], IOU[1], IOU[2], IOU[3], IOU[4], IOU[5], mean_IOU))
+        print('- ACC: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
+              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}'
+              .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
+        print('-' * 60)
+        self.input_ = all_input
+        self.label_ = all_mask
+        self.pred_ = all_pred
+
+    def MC_evaluate(self, dataset='valid', train_step=None):
+        pred_tot = []  # list of mean predictions; each of shape (h, w, d)
+        var_tot = []  # list of variance predictions (i.e. uncertainties); each of shape (h, w, d)
+        num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
+        self.sess.run(tf.local_variables_initializer())
+
+        scan_num = 0
+        for batch_step in range(num_batch):
+            data_x, data_y = self.data_reader.next_batch(num=scan_num, mode=dataset)
+            depth = data_x.shape[0] * data_x.shape[-2]
+            scan_input = np.zeros((self.conf.height, self.conf.width, depth, self.conf.channel))
+            scan_mask = np.zeros((self.conf.height, self.conf.width, depth))
+            scan_mask_prob = np.zeros((self.conf.height, self.conf.width, depth, self.conf.num_cls))
+            scan_mask_pred = np.zeros((self.conf.height, self.conf.width, depth))
+            scan_input_mc, scan_mask_mc, scan_mask_pred_mc, scan_mask_prob_mc = [], [], [], []
+            for mc_iter in self.conf.monte_carlo_simulations:
+                for slice_num in range(data_x.shape[0]):  # for each slice of the 3D image
+                    feed_dict = {self.inputs_pl: np.expand_dims(data_x[slice_num], 0),
+                                 self.labels_pl: np.expand_dims(data_y[slice_num], 0),
+                                 self.is_training_pl: False,
+                                 self.with_dropout_pl: False,
+                                 self.keep_prob_pl: 1}
+                    input, mask, mask_prob, mask_pred = self.sess.run([self.inputs_pl,
+                                                                       self.labels_pl,
+                                                                       self.y_prob,
+                                                                       self.y_pred], feed_dict=feed_dict)
+                    idx_d, idx_u = slice_num * self.conf.Dcut_size, (slice_num + 1) * self.conf.Dcut_size
+                    scan_input[:, :, idx_d:idx_u] = np.squeeze(input, axis=0)
+                    scan_mask[:, :, idx_d:idx_u] = np.squeeze(mask, axis=0)
+                    scan_mask_prob[:, :, idx_d:idx_u] = np.squeeze(mask_prob, axis=0)
+                    scan_mask_pred[:, :, idx_d:idx_u] = np.squeeze(mask_pred, axis=0)
+                scan_input_mc.append(scan_input)
+                scan_mask_mc.append(scan_mask)
+                scan_mask_prob_mc.append(scan_mask_prob)
+                scan_mask_pred_mc.append(scan_mask_pred)
+            prob_mean = np.nanmean(scan_mask_prob_mc, axis=0)
+            prob_variance = np.var(scan_mask_prob_mc, axis=0)
+            pred = np.reshape(np.argmax(prob_mean, axis=-1), [-1])
+            scan_num += 1
+
+    def visualize(self, num_samples, train_step, mode='valid'):
+        if not self.conf.bayes:
+            scan_index = np.random.randint(low=0, high=len(self.pred_), size=num_samples)
+            slice_index = np.array([np.random.randint(low=0, high=self.pred_[si].shape[-1])
+                                  for si in scan_index])
+            if mode == 'valid':
+                dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
+            elif mode == "test":
+                dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step) + '_test')
+            if not os.path.exists(dest_path):
+                os.makedirs(dest_path)
+
+            x_plot = np.concatenate([np.expand_dims(self.input_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
+             for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
+            y_plot = np.concatenate([np.expand_dims(self.label_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
+             for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
+            pred_plot = np.concatenate([np.expand_dims(self.pred_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
+             for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
+
+            print('saving sample prediction images....... ')
+            plot_save_preds(x_plot, y_plot, pred_plot, dest_path, np.array(self.conf.label_name))
+        else:
+            pass

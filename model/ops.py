@@ -1,5 +1,13 @@
 import tensorflow as tf
-from utils import get_num_channels
+
+
+def get_num_channels(x):
+    """
+    returns the input's number of channels
+    :param x: input tensor with shape [batch_size, ..., num_channels]
+    :return: number of channels
+    """
+    return x.get_shape().as_list()[-1]
 
 
 def weight_variable(name, shape):

@@ -2,9 +2,7 @@ import glob
 import numpy as np
 import time
 from tqdm import *
-import matplotlib.pyplot as plt
 import h5py
-import cPickle as pickle
 import os
 project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
 all_files = glob.glob(project_path + '/data_preparation/our_data/1_raw_data/*.segdat')
