@@ -69,7 +69,9 @@ class BaseModel(object):
         self.learning_rate = tf.maximum(learning_rate, self.conf.lr_min)
         with tf.name_scope('Optimizer'):
             optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
-            self.train_op = optimizer.minimize(self.total_loss, global_step=global_step)
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+                self.train_op = optimizer.minimize(self.total_loss, global_step=global_step)
         self.sess.run(tf.global_variables_initializer())
         trainable_vars = tf.trainable_variables()
         self.saver = tf.train.Saver(var_list=trainable_vars, max_to_keep=1000)
@@ -190,7 +192,7 @@ class BaseModel(object):
             for slice_num in range(data_x.shape[0]):  # for each slice of the 3D image
                 feed_dict = {self.inputs_pl: np.expand_dims(data_x[slice_num], 0),
                              self.labels_pl: np.expand_dims(data_y[slice_num], 0),
-                             self.is_training_pl: False,
+                             self.is_training_pl: True,
                              self.with_dropout_pl: False,
                              self.keep_prob_pl: 1}
                 self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
