@@ -159,7 +159,7 @@ class BaseModel(object):
         if not self.conf.bayes:
             self.normal_evaluate(dataset='test')
         else:
-            self.MC_evaluate(dataset='valid')
+            self.MC_evaluate(dataset='test')
         self.visualize(num_samples=20, train_step=step_num, mode='test')
 
     def save(self, step):
@@ -178,7 +178,7 @@ class BaseModel(object):
         print('----> Model successfully restored')
 
     def normal_evaluate(self, dataset='valid', train_step=None):
-        num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
+        num_batch = self.num_test_batch if dataset == 'test' else self.conf.num_val_batch
         self.sess.run(tf.local_variables_initializer())
         hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
         all_input, all_mask, all_pred = [], [], []

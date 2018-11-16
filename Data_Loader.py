@@ -20,6 +20,7 @@ class DataLoader(object):
         project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
         self.train_files = glob.glob(project_path + self.cfg.train_data_dir + '*.h5')
         self.valid_files = glob.glob(project_path + self.cfg.valid_data_dir + '*.h5')
+        self.test_files = glob.glob(project_path + self.cfg.test_data_dir + '*.h5')
 
     def next_batch(self, num=None, mode='train'):
         if mode == 'train':
@@ -36,10 +37,13 @@ class DataLoader(object):
             x = np.concatenate(np.split(x, Dcuts, axis=-2)[:-1], axis=0)
             y = np.concatenate(np.split(y, Dcuts, axis=-1)[:-1], axis=0)
         elif mode == 'test':
-            h5f = h5py.File(self.test_data_dir + 'test.h5', 'r')
+            h5f = h5py.File(self.test_files[num], 'r')
             x = h5f['x_norm'][:]
             y = h5f['y'][:]
             h5f.close()
+            Dcuts = [num for num in range(0, x.shape[-2], self.cfg.Dcut_size)][1:]
+            x = np.concatenate(np.split(x, Dcuts, axis=-2)[:-1], axis=0)
+            y = np.concatenate(np.split(y, Dcuts, axis=-1)[:-1], axis=0)
         return x, y
 
     def count_num_samples(self, mode='valid'):
