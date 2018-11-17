@@ -63,7 +63,7 @@ class BaseModel(object):
         global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
         learning_rate = tf.train.exponential_decay(self.conf.init_lr,
                                                    global_step,
-                                                   decay_steps=1000,
+                                                   decay_steps=2000,
                                                    decay_rate=0.97,
                                                    staircase=True)
         self.learning_rate = tf.maximum(learning_rate, self.conf.lr_min)

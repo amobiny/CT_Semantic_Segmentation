@@ -7,7 +7,7 @@ flags.DEFINE_integer('monte_carlo_simulations', 10, 'The number of monte carlo s
 flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
 
 # Training logs
-flags.DEFINE_integer('max_step', 250000, '# of step for training')
+flags.DEFINE_integer('max_step', 300000, '# of step for training')
 flags.DEFINE_integer('SUMMARY_FREQ', 20, 'Number of step to save summary')
 flags.DEFINE_integer('VAL_FREQ', 100, 'Number of step to evaluate the network on Validation data')
 flags.DEFINE_float('init_lr', 1e-3, 'Initial learning rate')
@@ -23,9 +23,9 @@ flags.DEFINE_integer('val_batch_size', 1, 'training batch size')
 
 # data
 flags.DEFINE_integer('num_tr', 20, 'Total number of training images')
-flags.DEFINE_string('train_data_dir', '/data_preparation/our_data/4_correctMask_normalized/new_train/', 'Training data')
-flags.DEFINE_string('valid_data_dir', '/data_preparation/our_data/4_correctMask_normalized/new_test/', 'Validation data ')
-flags.DEFINE_string('test_data_dir', '/data_preparation/our_data/4_correctMask_normalized/new_test/', 'Test data')
+flags.DEFINE_string('train_data_dir', '/data_preparation/our_data/4_correctMask_normalized/train/', 'Training data')
+flags.DEFINE_string('valid_data_dir', '/data_preparation/our_data/4_correctMask_normalized/test/', 'Validation data ')
+flags.DEFINE_string('test_data_dir', '/data_preparation/our_data/4_correctMask_normalized/test/', 'Test data')
 flags.DEFINE_boolean('random_crop', True, 'Crops the input and output randomly during training time only')
 flags.DEFINE_list('crop_size', [256, 256, 32], 'crop sizes')
 flags.DEFINE_boolean('data_augment', False, 'Adds augmentation to data')
@@ -37,7 +37,7 @@ flags.DEFINE_integer('depth', 32, 'Network depth size during training (if random
 flags.DEFINE_integer('Dcut_size', 32, 'Depth of the validation slices')
 
 # Directories
-flags.DEFINE_string('run_name', 'run011', 'Run name')
+flags.DEFINE_string('run_name', 'run1', 'Run name')
 flags.DEFINE_string('logdir', './Results/log_dir/', 'Logs directory')
 flags.DEFINE_string('modeldir', './Results/model_dir/', 'Model directory')
 flags.DEFINE_string('imagedir', './Results/image_dir/', 'Directory to save sample predictions')
