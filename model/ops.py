@@ -180,6 +180,7 @@ def batch_norm(bias_input, is_training, scope):
                        lambda: tf.contrib.layers.batch_norm(bias_input, is_training=True, center=False, scope=scope),
                        lambda: tf.contrib.layers.batch_norm(bias_input, is_training=False, center=False, reuse=True, scope=scope))
 
+
 # def batch_norm(inputs, is_training, scope='BN', decay=0.999, epsilon=1e-3):
 #     """
 #     creates a batch normalization layer

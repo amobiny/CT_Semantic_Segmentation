@@ -96,20 +96,18 @@ def vis_segmentation(image, seg_map_gt, seg_map_pred, var_map_pred=None, label_n
     plt.savefig(image_name)
 
 
-def plot_save_preds(images, masks, mask_preds, var_preds=None, path=None, label_names=None):
+def plot_save_preds(images, masks, mask_preds, var_preds=None, slice_numbers=None,
+                    depth=None, path=None, label_names=None):
     if not os.path.exists(path):
         os.makedirs(path)
-    number = 0
     if var_preds is None:
-        for image, mask, mask_pred in zip(images, masks, mask_preds):
-            img_name = os.path.join(path, str(number)+'.png')
+        for slice_num, image, mask, mask_pred in zip(slice_numbers, images, masks, mask_preds):
+            img_name = os.path.join(path, str(slice_num) + '_' + str(depth) + '.png')
             vis_segmentation(image, mask, mask_pred, label_names=label_names, image_name=img_name)
-            number += 1
     else:
-        for image, mask, mask_pred, var_pred in zip(images, masks, mask_preds, var_preds):
-            img_name = os.path.join(path, str(number)+'.png')
+        for slice_num, image, mask, mask_pred, var_pred in zip(slice_numbers, images, masks, mask_preds, var_preds):
+            img_name = os.path.join(path, str(slice_num) + '_' + str(depth) + '.png')
             vis_segmentation(image, mask, mask_pred, var_pred, label_names, img_name)
-            number += 1
 
 
 if __name__ == '__main__':

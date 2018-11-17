@@ -7,8 +7,8 @@ from model.ops import get_num_channels
 class VNet(BaseModel):
     def __init__(self, sess, conf,
                  num_levels=4,
-                 num_convs=(2, 3, 4, 6),
-                 bottom_convs=8,
+                 num_convs=(2, 3, 3, 4),
+                 bottom_convs=5,
                  act_fcn=prelu):
 
         super(VNet, self).__init__(sess, conf)
@@ -61,6 +61,7 @@ class VNet(BaseModel):
                 x = x + layer_input
             x = self.act_fcn(x, name='prelu_' + str(i + 1))
             x = tf.layers.dropout(x, rate=(1 - self.keep_prob_pl), training=self.with_dropout_pl)
+            # x = tf.nn.dropout(x, keep_prob=self.conf.keep_prob)
         return x
 
     def conv_block_up(self, layer_input, fine_grained_features, num_convolutions):

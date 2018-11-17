@@ -143,7 +143,6 @@ class BaseModel(object):
             if train_step % self.conf.VAL_FREQ == 0:
                 print('-' * 25 + 'Validation' + '-' * 25)
                 self.normal_evaluate(dataset='valid', train_step=train_step)
-                self.visualize(num_samples=20, train_step=train_step, mode='valid')
 
     def test(self, step_num):
         self.sess.run(tf.local_variables_initializer())
@@ -157,10 +156,10 @@ class BaseModel(object):
 
         print('-' * 25 + 'Test' + '-' * 25)
         if not self.conf.bayes:
-            self.normal_evaluate(dataset='test')
+            self.normal_evaluate(dataset='test', train_step=step_num)
         else:
-            self.MC_evaluate(dataset='test')
-        self.visualize(num_samples=20, train_step=step_num, mode='test')
+            self.MC_evaluate(dataset='test', train_step=step_num)
+        # self.visualize(num_samples=20, train_step=step_num, mode='test')
 
     def save(self, step):
         print('----> Saving the model at step #{0}'.format(step))
@@ -178,12 +177,11 @@ class BaseModel(object):
         print('----> Model successfully restored')
 
     def normal_evaluate(self, dataset='valid', train_step=None):
-        num_batch = self.num_test_batch if dataset == 'test' else self.conf.num_val_batch
+        num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
         self.sess.run(tf.local_variables_initializer())
         hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
-        all_input, all_mask, all_pred = [], [], []
         scan_num = 0
-        for batch_step in range(num_batch):
+        for image_index in range(num_batch):
             data_x, data_y = self.data_reader.next_batch(num=scan_num, mode=dataset)
             depth = data_x.shape[0] * data_x.shape[-2]
             scan_input = np.zeros((self.conf.height, self.conf.width, depth, self.conf.channel))
@@ -204,9 +202,8 @@ class BaseModel(object):
                 scan_input[:, :, idx_d:idx_u] = np.squeeze(inputs, axis=0)
                 scan_mask[:, :, idx_d:idx_u] = np.squeeze(mask, axis=0)
                 scan_mask_pred[:, :, idx_d:idx_u] = np.squeeze(mask_pred, axis=0)
-            all_input.append(scan_input)
-            all_mask.append(scan_mask)
-            all_pred.append(scan_mask_pred)
+            self.visualize_me(np.squeeze(scan_input), scan_mask, scan_mask_pred, train_step=train_step,
+                              img_idx=image_index, mode='valid')
             scan_num += 1
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
@@ -228,55 +225,45 @@ class BaseModel(object):
               'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}'
               .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
         print('-' * 60)
-        self.input_ = all_input
-        self.label_ = all_mask
-        self.pred_ = all_pred
 
-    def MC_evaluate(self, dataset='valid'):
-        all_input, all_mask = [], []
-        pred_tot = []  # list of mean predictions; each of shape (h, w, d)
-        var_tot = []  # list of variance predictions (i.e. uncertainties); each of shape (h, w, d)
+    def MC_evaluate(self, dataset='valid', train_step=None):
         num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
         hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
         self.sess.run(tf.local_variables_initializer())
         scan_num = 0
-        for batch_step in tqdm(range(num_batch)):
+        for image_index in tqdm(range(num_batch)[:2]):
             data_x, data_y = self.data_reader.next_batch(num=scan_num, mode=dataset)
             depth = data_x.shape[0] * data_x.shape[-2]
             scan_input = np.zeros((self.conf.height, self.conf.width, depth, self.conf.channel))
             scan_mask = np.zeros((self.conf.height, self.conf.width, depth))
             scan_mask_prob = np.zeros((self.conf.height, self.conf.width, depth, self.conf.num_cls))
             scan_mask_pred = np.zeros((self.conf.height, self.conf.width, depth))
-            scan_mask_pred_mc, scan_mask_prob_mc = [], []
-            for mc_iter in range(self.conf.monte_carlo_simulations):
-                for slice_num in range(data_x.shape[0]):  # for each slice of the 3D image
+            scan_mask_pred_mc = [np.zeros_like(scan_mask_pred) for _ in range(self.conf.monte_carlo_simulations)]
+            scan_mask_prob_mc = [np.zeros_like(scan_mask_prob) for _ in range(self.conf.monte_carlo_simulations)]
+            for slice_num in range(data_x.shape[0]):  # for each slice of the 3D image
+                idx_d, idx_u = slice_num * self.conf.Dcut_size, (slice_num + 1) * self.conf.Dcut_size
+                for mc_iter in range(self.conf.monte_carlo_simulations):
                     feed_dict = {self.inputs_pl: np.expand_dims(data_x[slice_num], 0),
                                  self.labels_pl: np.expand_dims(data_y[slice_num], 0),
-                                 self.is_training_pl: False,
+                                 self.is_training_pl: True,
                                  self.with_dropout_pl: True,
                                  self.keep_prob_pl: self.conf.keep_prob}
                     inputs, mask, mask_prob, mask_pred = self.sess.run([self.inputs_pl,
                                                                         self.labels_pl,
                                                                         self.y_prob,
                                                                         self.y_pred], feed_dict=feed_dict)
-                    idx_d, idx_u = slice_num * self.conf.Dcut_size, (slice_num + 1) * self.conf.Dcut_size
-                    scan_mask_prob[:, :, idx_d:idx_u] = np.squeeze(mask_prob, axis=0)
-                    scan_mask_pred[:, :, idx_d:idx_u] = np.squeeze(mask_pred, axis=0)
-                    if not mc_iter:
-                        scan_input[:, :, idx_d:idx_u] = np.squeeze(inputs, axis=0)
-                        scan_mask[:, :, idx_d:idx_u] = np.squeeze(mask, axis=0)
+                    scan_mask_prob_mc[mc_iter][:, :, idx_d:idx_u] = np.squeeze(mask_prob, axis=0)
+                    scan_mask_pred_mc[mc_iter][:, :, idx_d:idx_u] = np.squeeze(mask_pred, axis=0)
+                scan_input[:, :, idx_d:idx_u] = np.squeeze(inputs, axis=0)
+                scan_mask[:, :, idx_d:idx_u] = np.squeeze(mask, axis=0)
 
-                scan_mask_prob_mc.append(scan_mask_prob)
-                scan_mask_pred_mc.append(scan_mask_pred)
             prob_mean = np.nanmean(scan_mask_prob_mc, axis=0)
             prob_variance = np.var(scan_mask_prob_mc, axis=0)
             pred = np.argmax(prob_mean, axis=-1)
             var_one = var_calculate(pred, prob_variance)
             hist += get_hist(pred.flatten(), scan_mask.flatten(), num_cls=self.conf.num_cls)
-            all_input.append(scan_input)
-            all_mask.append(scan_mask)
-            pred_tot.append(pred)
-            var_tot.append(var_one)
+            self.visualize_me(np.squeeze(scan_input), scan_mask, pred, var_one, train_step=train_step,
+                              img_idx=image_index, mode='test')
             scan_num += 1
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
@@ -288,10 +275,28 @@ class BaseModel(object):
               'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}'
               .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
         print('-' * 60)
-        self.input_ = all_input
-        self.label_ = all_mask
-        self.pred_ = pred_tot
-        self.pred_var = var_tot
+
+    def visualize_me(self, x, y, y_pred, var=None, train_step=None, img_idx=None, mode='valid'):  # all of shape (512, 512, num_slices)
+        depth = y.shape[-1]
+        slices = np.linspace(20, depth-20, 10).astype(int)
+        x_plot = [x[:, :, i] for i in slices]
+        y_plot = [y[:, :, i] for i in slices]
+        pred_plot = [y_pred[:, :, i] for i in slices]
+        if mode == 'valid':
+            dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step), str(img_idx))
+        elif mode == "test":
+            dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step) + '_test', str(img_idx))
+
+        print('saving sample prediction images....... ')
+
+        if not self.conf.bayes or mode == 'valid':
+            # run it either in validation mode or when non-bayesian network
+            plot_save_preds(x_plot, y_plot, pred_plot, slice_numbers=slices, depth=depth,
+                            path=dest_path, label_names=np.array(self.conf.label_name))
+        else:
+            var_plot = [var[:, :, i] for i in slices]
+            plot_save_preds(x_plot, y_plot, pred_plot, var_plot, slice_numbers=slices, depth=depth,
+                            path=dest_path + '/bayes', label_names=np.array(self.conf.label_name))
 
     def visualize(self, num_samples, train_step, mode='valid'):
 
