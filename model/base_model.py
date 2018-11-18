@@ -122,7 +122,7 @@ class BaseModel(object):
         self.data_reader = DataLoader(self.conf)
         self.numValid = self.data_reader.count_num_samples(mode='valid')
         self.num_val_batch = int(self.numValid / self.conf.val_batch_size)
-        for train_step in range(self.conf.max_step + 1):
+        for train_step in range(self.conf.reload_step, self.conf.reload_step + self.conf.max_step + 1):
             x_batch, y_batch = self.data_reader.next_batch(mode='train')
             feed_dict = {self.inputs_pl: x_batch,
                          self.labels_pl: y_batch,
@@ -137,7 +137,7 @@ class BaseModel(object):
                                                  feed_dict=feed_dict)
                 loss, acc = self.sess.run([self.mean_loss, self.mean_accuracy])
                 print('step: {0:<6}, train_loss= {1:.4f}, train_acc={2:.01%}'.format(train_step, loss, acc))
-                self.save_summary(summary, train_step + self.conf.reload_step, is_train=True)
+                self.save_summary(summary, train_step, is_train=True)
             else:
                 self.sess.run([self.train_op, self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
             if train_step % self.conf.VAL_FREQ == 0:
@@ -211,11 +211,11 @@ class BaseModel(object):
 
         if dataset == "valid":  # save the summaries and improved model in validation mode
             summary_valid = self.sess.run(self.merged_summary, feed_dict=feed_dict)
-            self.save_summary(summary_valid, train_step + self.conf.reload_step, is_train=False)
+            self.save_summary(summary_valid, train_step, is_train=False)
             if loss < self.best_validation_loss:
                 self.best_validation_loss = loss
                 print('>>>>>>>> model validation loss improved; saving the model......')
-                self.save(train_step + self.conf.reload_step)
+                self.save(train_step)
 
         print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}'.format(train_step, loss, acc))
         print('- IOU: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '

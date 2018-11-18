@@ -8,8 +8,8 @@ flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
 
 # Training logs
 flags.DEFINE_integer('max_step', 300000, '# of step for training')
-flags.DEFINE_integer('SUMMARY_FREQ', 20, 'Number of step to save summary')
-flags.DEFINE_integer('VAL_FREQ', 100, 'Number of step to evaluate the network on Validation data')
+flags.DEFINE_integer('SUMMARY_FREQ', 100, 'Number of step to save summary')
+flags.DEFINE_integer('VAL_FREQ', 500, 'Number of step to evaluate the network on Validation data')
 flags.DEFINE_float('init_lr', 1e-3, 'Initial learning rate')
 flags.DEFINE_float('lr_min', 1e-5, 'Minimum learning rate')
 
