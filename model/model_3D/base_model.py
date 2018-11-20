@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tqdm import tqdm
 
-from Data_Loader import DataLoader
+from DataLoaders.Data_Loader_3D import DataLoader
 from utils.plot_utils import plot_save_preds
 from utils.loss_utils import cross_entropy, dice_coeff, weighted_cross_entropy
 from utils.eval_utils import get_hist, compute_iou, var_calculate

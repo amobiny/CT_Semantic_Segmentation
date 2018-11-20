@@ -1,7 +1,7 @@
 import tensorflow as tf
-from model.base_model import BaseModel
-from model.ops import conv_3d, deconv_3d, prelu
-from model.ops import get_num_channels
+from model.model_2D.base_model import BaseModel
+from model.model_2D.ops import conv_2d, deconv_2d, prelu
+from model.model_2D.ops import get_num_channels
 
 
 class VNet(BaseModel):

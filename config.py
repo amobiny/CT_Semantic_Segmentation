@@ -22,6 +22,7 @@ flags.DEFINE_integer('batch_size', 1, 'training batch size')
 flags.DEFINE_integer('val_batch_size', 1, 'training batch size')
 
 # data
+flags.DEFINE_integer('dim', 2, 'input and network dimension; either 2 or 3')
 flags.DEFINE_integer('num_tr', 20, 'Total number of training images')
 flags.DEFINE_string('train_data_dir', '/data_preparation/our_data/4_correctMask_normalized/train/', 'Training data')
 flags.DEFINE_string('valid_data_dir', '/data_preparation/our_data/4_correctMask_normalized/test/', 'Validation data ')

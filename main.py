@@ -1,14 +1,14 @@
 import tensorflow as tf
 from config import args
-# from model.UNet import UNET_3D
-# from model.FCNet import FCN
-# from model.Tiramisu import Tiramisu
-# from model.DenseNet import DenseNet
-from model.VNet import VNet as Model
-# from model.SegNet import SegNet as Model
-
 import os
 from utils.other_utils import write_spec
+
+if args.dim == 2:
+    # from model.model_2D.VNet import VNet as Model
+    from model.model_2D.SegNet import SegNet as Model
+else:
+    from model.model_3D.VNet import VNet as Model
+    # from model.model_3D.SegNet import SegNet as Model
 
 
 def main(_):

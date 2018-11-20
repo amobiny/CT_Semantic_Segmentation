@@ -113,3 +113,4 @@ raw_data/
 *.png
 Results/
 data_preparation/
+*.npy
