@@ -175,6 +175,9 @@ class BaseModel(object):
         num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
         self.sess.run(tf.local_variables_initializer())
         hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
+        plot_inputs = np.zeros((0, self.conf.height, self.conf.width))
+        plot_mask = np.zeros((0, self.conf.height, self.conf.width))
+        plot_mask_pred = np.zeros((0, self.conf.height, self.conf.width))
         for step in range(num_batch):
             start = self.conf.val_batch_size * step
             end = self.conf.val_batch_size * (step + 1)
@@ -185,11 +188,15 @@ class BaseModel(object):
                          self.with_dropout_pl: False,
                          self.keep_prob_pl: 1}
             self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
-            inputs, mask, mask_pred = self.sess.run([self.inputs_pl,
-                                                     self.labels_pl,
-                                                     self.y_pred], feed_dict=feed_dict)
-            hist += get_hist(mask_pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
-        self.visualize_me(np.squeeze(inputs), mask, mask_pred, train_step=train_step, mode='valid')
+            mask_pred = self.sess.run(self.y_pred, feed_dict=feed_dict)
+            hist += get_hist(mask_pred.flatten(), data_y.flatten(), num_cls=self.conf.num_cls)
+            if plot_inputs.shape[0] < 30 and np.random.randint(2):  # randomly select slices to plot and save
+                idx = np.random.randint(self.conf.batch_size)
+                plot_inputs = np.concatenate((plot_inputs, data_x[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
+                plot_mask = np.concatenate((plot_mask, data_y[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
+                plot_mask_pred = np.concatenate((plot_mask_pred, mask_pred[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
+
+        self.visualize_me(plot_inputs, plot_mask, plot_mask_pred, train_step=train_step, mode='valid')
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
         loss, acc = self.sess.run([self.mean_loss, self.mean_accuracy])
@@ -256,7 +263,7 @@ class BaseModel(object):
         print('-' * 60)
 
     def visualize_me(self, x, y, y_pred, var=None, train_step=None, img_idx=None,
-                     mode='valid'):  # all of shape (512, 512, num_slices)
+                     mode='valid'):  # all of shape (#images, 512, 512)
         if mode == 'valid':
             dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
         elif mode == "test":

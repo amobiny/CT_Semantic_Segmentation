@@ -27,7 +27,7 @@ class DataLoader(object):
     def next_batch(self, start=None, end=None, mode='train'):
         if mode == 'train':
             train_num = np.random.randint(len(self.num_train))
-            img_idx = np.sort(np.random.randint(self.num_train[train_num], size=self.batch_size))
+            img_idx = np.sort(np.random.choice(self.num_train[train_num], size=self.batch_size, replace=False))
             h5f = h5py.File(self.train_file + '_' + str(train_num) + '.h5', 'r')
             x = h5f['x_norm'][list(img_idx)]
             y = h5f['y'][list(img_idx)]
