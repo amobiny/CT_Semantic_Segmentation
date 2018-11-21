@@ -18,8 +18,8 @@ flags.DEFINE_boolean('weighted_loss', False, 'Whether to use weighted cross-entr
 flags.DEFINE_string('loss_type', 'cross-entropy', 'cross-entropy or dice')
 flags.DEFINE_boolean('use_reg', False, 'Use L2 regularization on weights')
 flags.DEFINE_float('lmbda', 1e-4, 'L2 regularization coefficient')
-flags.DEFINE_integer('batch_size', 1, 'training batch size')
-flags.DEFINE_integer('val_batch_size', 1, 'training batch size')
+flags.DEFINE_integer('batch_size', 4, 'training batch size')
+flags.DEFINE_integer('val_batch_size', 4, 'training batch size')
 
 # data
 flags.DEFINE_integer('dim', 2, 'input and network dimension; either 2 or 3')

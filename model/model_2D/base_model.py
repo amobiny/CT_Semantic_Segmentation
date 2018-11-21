@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tqdm import tqdm
 from DataLoaders.Data_Loader_2D import DataLoader
-from utils.plot_utils import plot_save_preds
+from utils.plot_utils import plot_save_preds_2d
 from utils.loss_utils import cross_entropy, dice_coeff, weighted_cross_entropy
 from utils.eval_utils import get_hist, compute_iou, var_calculate
 import os
@@ -29,7 +29,7 @@ class BaseModel(object):
     def loss_func(self):
         with tf.name_scope('Loss'):
             self.y_prob = tf.nn.softmax(self.logits, axis=-1)
-            y_one_hot = tf.one_hot(self.labels_pl, depth=self.conf.num_cls, axis=4, name='y_one_hot')
+            y_one_hot = tf.one_hot(self.labels_pl, depth=self.conf.num_cls, axis=3, name='y_one_hot')
             if self.conf.weighted_loss:
                 loss = weighted_cross_entropy(y_one_hot, self.logits, self.conf.num_cls)
             else:
@@ -189,7 +189,7 @@ class BaseModel(object):
                                                      self.labels_pl,
                                                      self.y_pred], feed_dict=feed_dict)
             hist += get_hist(mask_pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
-        self.visualize_me(inputs, mask, mask_pred, train_step=train_step, img_idx=image_index, mode='valid')
+        self.visualize_me(np.squeeze(inputs), mask, mask_pred, train_step=train_step, mode='valid')
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
         loss, acc = self.sess.run([self.mean_loss, self.mean_accuracy])
@@ -220,36 +220,29 @@ class BaseModel(object):
             start = self.conf.val_batch_size * step
             end = self.conf.val_batch_size * (step + 1)
             data_x, data_y = self.data_reader.next_batch(start=start, end=end, mode=dataset)
-            scan_input = np.zeros((self.conf.height, self.conf.width, depth, self.conf.channel))
-            scan_mask = np.zeros((self.conf.height, self.conf.width, depth))
-            scan_mask_prob = np.zeros((self.conf.height, self.conf.width, depth, self.conf.num_cls))
-            scan_mask_pred = np.zeros((self.conf.height, self.conf.width, depth))
-            scan_mask_pred_mc = [np.zeros_like(scan_mask_pred) for _ in range(self.conf.monte_carlo_simulations)]
-            scan_mask_prob_mc = [np.zeros_like(scan_mask_prob) for _ in range(self.conf.monte_carlo_simulations)]
-            for slice_num in range(data_x.shape[0]):  # for each slice of the 3D image
-                idx_d, idx_u = slice_num * self.conf.Dcut_size, (slice_num + 1) * self.conf.Dcut_size
-                for mc_iter in range(self.conf.monte_carlo_simulations):
-                    feed_dict = {self.inputs_pl: np.expand_dims(data_x[slice_num], 0),
-                                 self.labels_pl: np.expand_dims(data_y[slice_num], 0),
-                                 self.is_training_pl: True,
-                                 self.with_dropout_pl: True,
-                                 self.keep_prob_pl: self.conf.keep_prob}
-                    inputs, mask, mask_prob, mask_pred = self.sess.run([self.inputs_pl,
-                                                                        self.labels_pl,
-                                                                        self.y_prob,
-                                                                        self.y_pred], feed_dict=feed_dict)
-                    scan_mask_prob_mc[mc_iter][:, :, idx_d:idx_u] = np.squeeze(mask_prob, axis=0)
-                    scan_mask_pred_mc[mc_iter][:, :, idx_d:idx_u] = np.squeeze(mask_pred, axis=0)
-                scan_input[:, :, idx_d:idx_u] = np.squeeze(inputs, axis=0)
-                scan_mask[:, :, idx_d:idx_u] = np.squeeze(mask, axis=0)
+            mask_pred_mc = [np.zeros((self.conf.val_batch_size, self.conf.height, self.conf.width, self.conf.channel))
+                            for _ in range(self.conf.monte_carlo_simulations)]
+            mask_prob_mc = [np.zeros((self.conf.val_batch_size, self.conf.height, self.conf.width, self.conf.num_cls))
+                            for _ in range(self.conf.monte_carlo_simulations)]
+            for mc_iter in range(self.conf.monte_carlo_simulations):
+                feed_dict = {self.inputs_pl: data_x,
+                             self.labels_pl: data_y,
+                             self.is_training_pl: True,
+                             self.with_dropout_pl: True,
+                             self.keep_prob_pl: self.conf.keep_prob}
+                inputs, mask, mask_prob, mask_pred = self.sess.run([self.inputs_pl,
+                                                                    self.labels_pl,
+                                                                    self.y_prob,
+                                                                    self.y_pred], feed_dict=feed_dict)
+                mask_prob_mc[mc_iter] = np.squeeze(mask_prob, axis=0)
+                mask_pred_mc[mc_iter] = np.squeeze(mask_pred, axis=0)
 
-            prob_mean = np.nanmean(scan_mask_prob_mc, axis=0)
-            prob_variance = np.var(scan_mask_prob_mc, axis=0)
+            prob_mean = np.nanmean(mask_prob_mc, axis=0)
+            prob_variance = np.var(mask_prob_mc, axis=0)
             pred = np.argmax(prob_mean, axis=-1)
             var_one = var_calculate(pred, prob_variance)
-            hist += get_hist(pred.flatten(), scan_mask.flatten(), num_cls=self.conf.num_cls)
-            self.visualize_me(np.squeeze(scan_input), scan_mask, pred, var_one, train_step=train_step,
-                              img_idx=image_index, mode='test')
+            hist += get_hist(pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
+            self.visualize_me(np.squeeze(inputs), mask, pred, var_one, train_step=train_step, mode='test')
             scan_num += 1
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
@@ -262,50 +255,17 @@ class BaseModel(object):
               .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
         print('-' * 60)
 
-    def visualize_me(self, x, y, y_pred, var=None, train_step=None, img_idx=None, mode='valid'):  # all of shape (512, 512, num_slices)
-        depth = y.shape[-1]
-        slices = np.linspace(20, depth-20, 10).astype(int)
-        x_plot = [x[:, :, i] for i in slices]
-        y_plot = [y[:, :, i] for i in slices]
-        pred_plot = [y_pred[:, :, i] for i in slices]
-        if mode == 'valid':
-            dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step), str(img_idx))
-        elif mode == "test":
-            dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step) + '_test', str(img_idx))
-
-        print('saving sample prediction images....... ')
-
-        if not self.conf.bayes or mode == 'valid':
-            # run it either in validation mode or when non-bayesian network
-            plot_save_preds(x_plot, y_plot, pred_plot, slice_numbers=slices, depth=depth,
-                            path=dest_path, label_names=np.array(self.conf.label_name))
-        else:
-            var_plot = [var[:, :, i] for i in slices]
-            plot_save_preds(x_plot, y_plot, pred_plot, var_plot, slice_numbers=slices, depth=depth,
-                            path=dest_path + '/bayes', label_names=np.array(self.conf.label_name))
-
-    def visualize(self, num_samples, train_step, mode='valid'):
-
-        scan_index = np.random.randint(low=0, high=len(self.pred_), size=num_samples)
-        slice_index = np.array([np.random.randint(low=0, high=self.pred_[si].shape[-1])
-                                for si in scan_index])
+    def visualize_me(self, x, y, y_pred, var=None, train_step=None, img_idx=None,
+                     mode='valid'):  # all of shape (512, 512, num_slices)
         if mode == 'valid':
             dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
         elif mode == "test":
             dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step) + '_test')
 
-        x_plot = np.concatenate([np.expand_dims(self.input_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
-                                 for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
-        y_plot = np.concatenate([np.expand_dims(self.label_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
-                                 for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
-        pred_plot = np.concatenate([np.expand_dims(self.pred_[scan_idx][:, :, slice_idx].squeeze(), axis=0)
-                                    for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
         print('saving sample prediction images....... ')
 
         if not self.conf.bayes or mode == 'valid':
             # run it either in validation mode or when non-bayesian network
-            plot_save_preds(x_plot, y_plot, pred_plot, path=dest_path, label_names=np.array(self.conf.label_name))
+            plot_save_preds_2d(x, y, y_pred, path=dest_path, label_names=np.array(self.conf.label_name))
         else:
-            var_plot = np.concatenate([np.expand_dims(self.pred_var[scan_idx][:, :, slice_idx].squeeze(), axis=0)
-                                       for scan_idx, slice_idx in zip(scan_index, slice_index)], axis=0)
-            plot_save_preds(x_plot, y_plot, pred_plot, var_plot, dest_path + 'bayes', np.array(self.conf.label_name))
+            plot_save_preds_2d(x, y, y_pred, var, path=dest_path + '/bayes', label_names=np.array(self.conf.label_name))

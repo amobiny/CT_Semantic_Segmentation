@@ -2,17 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ca81b859-3b3c-4dfe-8655-cbde19f5d136" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/CT_Semantic_Segmentation.iml" afterPath="$PROJECT_DIR$/.idea/CT_Semantic_Segmentation.iml" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/Data_Loader.py" afterPath="" />
+      <change beforePath="$PROJECT_DIR$/DataLoaders/Data_Loader_2D.py" afterPath="$PROJECT_DIR$/DataLoaders/Data_Loader_2D.py" />
       <change beforePath="$PROJECT_DIR$/config.py" afterPath="$PROJECT_DIR$/config.py" />
-      <change beforePath="$PROJECT_DIR$/data_preparation/our_data/6_convert_to_2d.py" afterPath="$PROJECT_DIR$/data_preparation/our_data/6_convert_to_2d.py" />
       <change beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
-      <change beforePath="$PROJECT_DIR$/model/SegNet.py" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/model/VNet.py" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/model/base_model.py" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/model/ops.py" afterPath="" />
+      <change beforePath="$PROJECT_DIR$/model/model_2D/VNet.py" afterPath="$PROJECT_DIR$/model/model_2D/VNet.py" />
+      <change beforePath="$PROJECT_DIR$/model/model_2D/base_model.py" afterPath="$PROJECT_DIR$/model/model_2D/base_model.py" />
+      <change beforePath="$PROJECT_DIR$/model/model_3D/base_model.py" afterPath="$PROJECT_DIR$/model/model_3D/base_model.py" />
+      <change beforePath="$PROJECT_DIR$/utils/plot_utils.py" afterPath="$PROJECT_DIR$/utils/plot_utils.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -55,11 +51,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="450">
-      <file leaf-file-name="config.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="config.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/config.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="264">
-              <caret line="31" column="26" lean-forward="false" selection-start-line="31" selection-start-column="26" selection-end-line="31" selection-end-column="26" />
+            <state relative-caret-position="154">
+              <caret line="7" column="0" lean-forward="true" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -68,9 +64,11 @@
       <file leaf-file-name="main.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="22">
-              <caret line="1" column="18" lean-forward="false" selection-start-line="1" selection-start-column="18" selection-end-line="1" selection-end-column="18" />
-              <folding />
+            <state relative-caret-position="110">
+              <caret line="5" column="17" lean-forward="false" selection-start-line="5" selection-start-column="17" selection-end-line="5" selection-end-column="17" />
+              <folding>
+                <element signature="e#0#23#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -78,8 +76,20 @@
       <file leaf-file-name="SegNet.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/model/model_2D/SegNet.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="528">
-              <caret line="26" column="0" lean-forward="false" selection-start-line="26" selection-start-column="0" selection-end-line="26" selection-end-column="0" />
+            <state relative-caret-position="682">
+              <caret line="31" column="62" lean-forward="false" selection-start-line="31" selection-start-column="62" selection-end-line="31" selection-end-column="62" />
+              <folding>
+                <element signature="e#0#23#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="VNet.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/model/model_2D/VNet.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="2046">
+              <caret line="93" column="0" lean-forward="false" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
               </folding>
@@ -90,7 +100,7 @@
       <file leaf-file-name="ops.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/model/model_2D/ops.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3300">
+            <state relative-caret-position="269">
               <caret line="150" column="34" lean-forward="false" selection-start-line="150" selection-start-column="34" selection-end-line="150" selection-end-column="34" />
               <folding />
             </state>
@@ -100,10 +110,22 @@
       <file leaf-file-name="base_model.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/model/model_2D/base_model.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="198">
-              <caret line="216" column="55" lean-forward="false" selection-start-line="216" selection-start-column="55" selection-end-line="216" selection-end-column="55" />
+            <state relative-caret-position="305">
+              <caret line="199" column="34" lean-forward="false" selection-start-line="199" selection-start-column="34" selection-end-line="199" selection-end-column="34" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="plot_utils.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/utils/plot_utils.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="189">
+              <caret line="111" column="0" lean-forward="false" selection-start-line="111" selection-start-column="0" selection-end-line="111" selection-end-column="0" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -112,22 +134,10 @@
       <file leaf-file-name="Data_Loader_2D.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/DataLoaders/Data_Loader_2D.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-689">
-              <caret line="0" column="0" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <state relative-caret-position="173">
+              <caret line="35" column="0" lean-forward="false" selection-start-line="35" selection-start-column="0" selection-end-line="35" selection-end-column="0" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="6_convert_to_2d.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/data_preparation/our_data/6_convert_to_2d.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="682">
-              <caret line="31" column="38" lean-forward="true" selection-start-line="31" selection-start-column="38" selection-end-line="31" selection-end-column="38" />
-              <folding>
-                <element signature="e#0#11#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -183,7 +193,6 @@
         <option value="$PROJECT_DIR$/model/SegNet.py" />
         <option value="$PROJECT_DIR$/utils/__init__.py" />
         <option value="$PROJECT_DIR$/utils/eval_utils.py" />
-        <option value="$PROJECT_DIR$/utils/plot_utils.py" />
         <option value="$PROJECT_DIR$/data_preparation/our_data/1_convert_to_hdf5.py" />
         <option value="$PROJECT_DIR$/sandbox.py" />
         <option value="$PROJECT_DIR$/data_preparation/our_data/4_generate_mask_labels.py" />
@@ -191,15 +200,18 @@
         <option value="$PROJECT_DIR$/DataLoaders/__init__.py" />
         <option value="$PROJECT_DIR$/model/base_model.py" />
         <option value="$PROJECT_DIR$/model/model_3D/VNet.py" />
-        <option value="$PROJECT_DIR$/model/model_2D/VNet.py" />
         <option value="$PROJECT_DIR$/model/model_2D/segnet_ops.py" />
-        <option value="$PROJECT_DIR$/main.py" />
-        <option value="$PROJECT_DIR$/config.py" />
         <option value="$PROJECT_DIR$/model/model_2D/ops.py" />
         <option value="$PROJECT_DIR$/model/model_2D/SegNet.py" />
-        <option value="$PROJECT_DIR$/DataLoaders/Data_Loader_2D.py" />
-        <option value="$PROJECT_DIR$/model/model_2D/base_model.py" />
+        <option value="$PROJECT_DIR$/model/model_3D/base_model.py" />
         <option value="$PROJECT_DIR$/data_preparation/our_data/6_convert_to_2d.py" />
+        <option value="$PROJECT_DIR$/bullshit.py" />
+        <option value="$PROJECT_DIR$/DataLoaders/Data_Loader_2D.py" />
+        <option value="$PROJECT_DIR$/config.py" />
+        <option value="$PROJECT_DIR$/model/model_2D/VNet.py" />
+        <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/utils/plot_utils.py" />
+        <option value="$PROJECT_DIR$/model/model_2D/base_model.py" />
       </list>
     </option>
   </component>
@@ -235,22 +247,6 @@
             <path>
               <item name="CT_Semantic_Segmentation" type="b2602c69:ProjectViewProjectNode" />
               <item name="CT_Semantic_Segmentation" type="462c0819:PsiDirectoryNode" />
-              <item name="data_preparation" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="CT_Semantic_Segmentation" type="b2602c69:ProjectViewProjectNode" />
-              <item name="CT_Semantic_Segmentation" type="462c0819:PsiDirectoryNode" />
-              <item name="data_preparation" type="462c0819:PsiDirectoryNode" />
-              <item name="our_data" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="CT_Semantic_Segmentation" type="b2602c69:ProjectViewProjectNode" />
-              <item name="CT_Semantic_Segmentation" type="462c0819:PsiDirectoryNode" />
-              <item name="DataLoaders" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="CT_Semantic_Segmentation" type="b2602c69:ProjectViewProjectNode" />
-              <item name="CT_Semantic_Segmentation" type="462c0819:PsiDirectoryNode" />
               <item name="model" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -258,6 +254,12 @@
               <item name="CT_Semantic_Segmentation" type="462c0819:PsiDirectoryNode" />
               <item name="model" type="462c0819:PsiDirectoryNode" />
               <item name="model_2D" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="CT_Semantic_Segmentation" type="b2602c69:ProjectViewProjectNode" />
+              <item name="CT_Semantic_Segmentation" type="462c0819:PsiDirectoryNode" />
+              <item name="model" type="462c0819:PsiDirectoryNode" />
+              <item name="model_3D" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -290,7 +292,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.6_convert_to_2d">
+  <component name="RunManager" selected="Python.main">
     <configuration name="1_convert_to_hdf5" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -345,19 +347,19 @@
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
     </configuration>
-    <configuration name="base_model" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="bullshit" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/model" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="CT_Semantic_Segmentation" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/model/base_model.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/bullshit.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -385,16 +387,16 @@
       <item index="0" class="java.lang.String" itemvalue="Python.main" />
       <item index="1" class="java.lang.String" itemvalue="Python.1_convert_to_hdf5" />
       <item index="2" class="java.lang.String" itemvalue="Python.4_generate_mask_labels" />
-      <item index="3" class="java.lang.String" itemvalue="Python.base_model" />
-      <item index="4" class="java.lang.String" itemvalue="Python.6_convert_to_2d" />
+      <item index="3" class="java.lang.String" itemvalue="Python.6_convert_to_2d" />
+      <item index="4" class="java.lang.String" itemvalue="Python.bullshit" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.6_convert_to_2d" />
-        <item index="1" class="java.lang.String" itemvalue="Python.main" />
-        <item index="2" class="java.lang.String" itemvalue="Python.4_generate_mask_labels" />
-        <item index="3" class="java.lang.String" itemvalue="Python.1_convert_to_hdf5" />
-        <item index="4" class="java.lang.String" itemvalue="Python.base_model" />
+        <item index="0" class="java.lang.String" itemvalue="Python.main" />
+        <item index="1" class="java.lang.String" itemvalue="Python.bullshit" />
+        <item index="2" class="java.lang.String" itemvalue="Python.6_convert_to_2d" />
+        <item index="3" class="java.lang.String" itemvalue="Python.4_generate_mask_labels" />
+        <item index="4" class="java.lang.String" itemvalue="Python.1_convert_to_hdf5" />
       </list>
     </recent_temporary>
   </component>
@@ -421,12 +423,12 @@
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2495915" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4565394" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.4565394" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32981315" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.40454915" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5296507" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -474,7 +476,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/utils/plot_utils.py</url>
-          <line>123</line>
+          <line>137</line>
           <option name="timeStamp" value="106" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -488,33 +490,36 @@
           <option name="timeStamp" value="164" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/model/model_2D/base_model.py</url>
-          <line>85</line>
-          <option name="timeStamp" value="165" />
+          <url>file://$PROJECT_DIR$/data_preparation/our_data/6_convert_to_2d.py</url>
+          <line>30</line>
+          <option name="timeStamp" value="173" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/data_preparation/our_data/6_convert_to_2d.py</url>
-          <line>29</line>
-          <option name="timeStamp" value="173" />
+          <url>file://$PROJECT_DIR$/model/model_2D/base_model.py</url>
+          <line>138</line>
+          <option name="timeStamp" value="187" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/model/model_2D/base_model.py</url>
+          <line>126</line>
+          <option name="timeStamp" value="193" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/model/model_2D/base_model.py</url>
+          <line>191</line>
+          <option name="timeStamp" value="196" />
         </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="174" />
+      <option name="time" value="199" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/anaconda2/envs/jj/lib/python3.6/site-packages/numpy/core/fromnumeric.py" />
-    <entry file="file://$USER_HOME$/anaconda2/envs/jj/lib/python3.6/site-packages/tensorflow/python/summary/summary.py" />
-    <entry file="file://$USER_HOME$/anaconda2/envs/jj/lib/python3.6/site-packages/tensorflow/python/layers/core.py" />
-    <entry file="file://$USER_HOME$/anaconda2/envs/jj/lib/python3.6/site-packages/tensorflow/python/ops/gen_nn_ops.py" />
-    <entry file="file://$PROJECT_DIR$/model/utils/utils_segnet.py" />
     <entry file="file://$USER_HOME$/anaconda2/envs/jj/lib/python3.6/site-packages/tensorflow/python/framework/ops.py" />
-    <entry file="file://$USER_HOME$/anaconda2/envs/jj/lib/python3.6/site-packages/tensorflow/python/platform/flags.py" />
     <entry file="file://$PROJECT_DIR$/utils.py" />
-    <entry file="file://$USER_HOME$/anaconda2/envs/jj/lib/python3.6/site-packages/tensorflow/python/client/session.py" />
     <entry file="file://$PROJECT_DIR$/data_preparation/our_data/4_generate_mask_labels.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="220">
@@ -573,16 +578,6 @@
     <entry file="file://$PROJECT_DIR$/model/SegNet.py" />
     <entry file="file://$PROJECT_DIR$/model/ops.py" />
     <entry file="file://$USER_HOME$/anaconda3/envs/tf/lib/python3.6/site-packages/tensorflow/python/platform/flags.py" />
-    <entry file="file://$PROJECT_DIR$/utils/plot_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="273">
-          <caret line="103" column="0" lean-forward="false" selection-start-line="103" selection-start-column="0" selection-end-line="103" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#18#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/model/VNet.py" />
     <entry file="file://$PROJECT_DIR$/Data_Loader.py" />
     <entry file="file://$PROJECT_DIR$/DataLoaders/__init__.py">
@@ -592,32 +587,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sandbox.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="550">
-          <caret line="27" column="0" lean-forward="false" selection-start-line="27" selection-start-column="0" selection-end-line="27" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/model/base_model.py" />
-    <entry file="file://$PROJECT_DIR$/model/model_3D/VNet.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="242">
-          <caret line="11" column="32" lean-forward="true" selection-start-line="11" selection-start-column="32" selection-end-line="11" selection-end-column="32" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/utils/loss_utils.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="242">
           <caret line="11" column="11" lean-forward="true" selection-start-line="11" selection-start-column="11" selection-end-line="11" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/model/model_2D/VNet.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="44">
-          <caret line="2" column="48" lean-forward="false" selection-start-line="2" selection-start-column="48" selection-end-line="2" selection-end-column="48" />
         </state>
       </provider>
     </entry>
@@ -626,24 +600,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="335">
           <caret line="680" column="0" lean-forward="false" selection-start-line="680" selection-start-column="0" selection-end-line="680" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/model/model_2D/SegNet.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="528">
-          <caret line="26" column="0" lean-forward="false" selection-start-line="26" selection-start-column="0" selection-end-line="26" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#23#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/model/model_2D/ops.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3300">
-          <caret line="150" column="34" lean-forward="false" selection-start-line="150" selection-start-column="34" selection-end-line="150" selection-end-column="34" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -663,49 +619,161 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/model/model_2D/base_model.py">
+    <entry file="file://$PROJECT_DIR$/sandbox.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="198">
-          <caret line="216" column="55" lean-forward="false" selection-start-line="216" selection-start-column="55" selection-end-line="216" selection-end-column="55" />
+        <state relative-caret-position="154">
+          <caret line="9" column="0" lean-forward="false" selection-start-line="9" selection-start-column="0" selection-end-line="10" selection-end-column="19" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/data_preparation/our_data/6_convert_to_2d.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="271">
+          <caret line="37" column="0" lean-forward="false" selection-start-line="37" selection-start-column="0" selection-end-line="40" selection-end-column="15" />
+          <folding>
+            <element signature="e#0#11#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bullshit.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="330">
+          <caret line="15" column="0" lean-forward="false" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharmCE2017.3/system/python_stubs/1402323295/numpy/random/mtrand.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-32">
+          <caret line="2018" column="4" lean-forward="false" selection-start-line="2018" selection-start-column="4" selection-end-line="2018" selection-end-column="4" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda2/envs/jj/lib/python3.6/site-packages/tensorflow/python/ops/array_ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="166">
+          <caret line="2427" column="0" lean-forward="false" selection-start-line="2427" selection-start-column="0" selection-end-line="2427" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/model/model_3D/base_model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-242">
+          <caret line="4" column="28" lean-forward="false" selection-start-line="4" selection-start-column="28" selection-end-line="4" selection-end-column="28" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda2/envs/jj/lib/python3.6/site-packages/tensorflow/python/client/session.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="144">
+          <caret line="1333" column="14" lean-forward="true" selection-start-line="1333" selection-start-column="14" selection-end-line="1333" selection-end-column="14" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda2/envs/jj/lib/python3.6/site-packages/h5py/_hl/selections.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="183">
+          <caret line="360" column="0" lean-forward="false" selection-start-line="360" selection-start-column="0" selection-end-line="360" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/model/model_2D/ops.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="269">
+          <caret line="150" column="34" lean-forward="false" selection-start-line="150" selection-start-column="34" selection-end-line="150" selection-end-column="34" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/model/model_2D/SegNet.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="682">
+          <caret line="31" column="62" lean-forward="false" selection-start-line="31" selection-start-column="62" selection-end-line="31" selection-end-column="62" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
+    <entry file="file://$PROJECT_DIR$/model/model_3D/VNet.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="22">
-          <caret line="1" column="18" lean-forward="false" selection-start-line="1" selection-start-column="18" selection-end-line="1" selection-end-column="18" />
+        <state relative-caret-position="-22">
+          <caret line="11" column="32" lean-forward="true" selection-start-line="11" selection-start-column="32" selection-end-line="11" selection-end-column="32" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/config.py">
+    <entry file="file://$PROJECT_DIR$/model/model_2D/VNet.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="264">
-          <caret line="31" column="26" lean-forward="false" selection-start-line="31" selection-start-column="26" selection-end-line="31" selection-end-column="26" />
-          <folding />
+        <state relative-caret-position="2046">
+          <caret line="93" column="0" lean-forward="false" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/DataLoaders/Data_Loader_2D.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-689">
-          <caret line="0" column="0" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        <state relative-caret-position="173">
+          <caret line="35" column="0" lean-forward="false" selection-start-line="35" selection-start-column="0" selection-end-line="35" selection-end-column="0" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/data_preparation/our_data/6_convert_to_2d.py">
+    <entry file="file://$USER_HOME$/anaconda2/envs/jj/lib/python3.6/site-packages/tensorflow/python/platform/flags.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="682">
-          <caret line="31" column="38" lean-forward="true" selection-start-line="31" selection-start-column="38" selection-end-line="31" selection-end-column="38" />
+        <state relative-caret-position="403">
+          <caret line="84" column="0" lean-forward="false" selection-start-line="84" selection-start-column="0" selection-end-line="84" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/model/model_2D/base_model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="305">
+          <caret line="199" column="34" lean-forward="false" selection-start-line="199" selection-start-column="34" selection-end-line="199" selection-end-column="34" />
           <folding>
-            <element signature="e#0#11#0" expanded="true" />
+            <element signature="e#0#23#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/plot_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="189">
+          <caret line="111" column="0" lean-forward="false" selection-start-line="111" selection-start-column="0" selection-end-line="111" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="110">
+          <caret line="5" column="17" lean-forward="false" selection-start-line="5" selection-start-column="17" selection-end-line="5" selection-end-column="17" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/config.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="154">
+          <caret line="7" column="0" lean-forward="true" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>

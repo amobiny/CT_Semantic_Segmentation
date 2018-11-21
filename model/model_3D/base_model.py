@@ -2,7 +2,7 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from DataLoaders.Data_Loader_3D import DataLoader
-from utils.plot_utils import plot_save_preds
+from utils.plot_utils import plot_save_preds_3d
 from utils.loss_utils import cross_entropy, dice_coeff, weighted_cross_entropy
 from utils.eval_utils import get_hist, compute_iou, var_calculate
 import os
@@ -276,9 +276,10 @@ class BaseModel(object):
               .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
         print('-' * 60)
 
-    def visualize_me(self, x, y, y_pred, var=None, train_step=None, img_idx=None, mode='valid'):  # all of shape (512, 512, num_slices)
+    def visualize_me(self, x, y, y_pred, var=None, train_step=None, img_idx=None,
+                     mode='valid'):  # all of shape (512, 512, num_slices)
         depth = y.shape[-1]
-        slices = np.linspace(20, depth-20, 10).astype(int)
+        slices = np.linspace(20, depth - 20, 10).astype(int)
         x_plot = [x[:, :, i] for i in slices]
         y_plot = [y[:, :, i] for i in slices]
         pred_plot = [y_pred[:, :, i] for i in slices]
@@ -291,12 +292,12 @@ class BaseModel(object):
 
         if not self.conf.bayes or mode == 'valid':
             # run it either in validation mode or when non-bayesian network
-            plot_save_preds(x_plot, y_plot, pred_plot, slice_numbers=slices, depth=depth,
-                            path=dest_path, label_names=np.array(self.conf.label_name))
+            plot_save_preds_3d(x_plot, y_plot, pred_plot, slice_numbers=slices, depth=depth,
+                               path=dest_path, label_names=np.array(self.conf.label_name))
         else:
             var_plot = [var[:, :, i] for i in slices]
-            plot_save_preds(x_plot, y_plot, pred_plot, var_plot, slice_numbers=slices, depth=depth,
-                            path=dest_path + '/bayes', label_names=np.array(self.conf.label_name))
+            plot_save_preds_3d(x_plot, y_plot, pred_plot, var_plot, slice_numbers=slices, depth=depth,
+                               path=dest_path + '/bayes', label_names=np.array(self.conf.label_name))
 
     def visualize(self, num_samples, train_step, mode='valid'):
 

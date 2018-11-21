@@ -96,8 +96,8 @@ def vis_segmentation(image, seg_map_gt, seg_map_pred, var_map_pred=None, label_n
     plt.savefig(image_name)
 
 
-def plot_save_preds(images, masks, mask_preds, var_preds=None, slice_numbers=None,
-                    depth=None, path=None, label_names=None):
+def plot_save_preds_3d(images, masks, mask_preds, var_preds=None, slice_numbers=None,
+                       depth=None, path=None, label_names=None):
     if not os.path.exists(path):
         os.makedirs(path)
     if var_preds is None:
@@ -107,6 +107,20 @@ def plot_save_preds(images, masks, mask_preds, var_preds=None, slice_numbers=Non
     else:
         for slice_num, image, mask, mask_pred, var_pred in zip(slice_numbers, images, masks, mask_preds, var_preds):
             img_name = os.path.join(path, str(slice_num) + '_' + str(depth) + '.png')
+            vis_segmentation(image, mask, mask_pred, var_pred, label_names, img_name)
+
+
+def plot_save_preds_2d(images, masks, mask_preds, var_preds=None, path=None, label_names=None):
+    slice_numbers = list(range(masks.shape[0]))
+    if not os.path.exists(path):
+        os.makedirs(path)
+    if var_preds is None:
+        for slice_num, image, mask, mask_pred in zip(slice_numbers, images, masks, mask_preds):
+            img_name = os.path.join(path, str(slice_num) + '.png')
+            vis_segmentation(image, mask, mask_pred, label_names=label_names, image_name=img_name)
+    else:
+        for slice_num, image, mask, mask_pred, var_pred in zip(slice_numbers, images, masks, mask_preds, var_preds):
+            img_name = os.path.join(path, str(slice_num) + '.png')
             vis_segmentation(image, mask, mask_pred, var_pred, label_names, img_name)
 
 

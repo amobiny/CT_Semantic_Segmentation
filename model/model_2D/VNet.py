@@ -43,7 +43,7 @@ class VNet(BaseModel):
                         x = self.up_conv(x)
                         x = self.conv_block_up(x, f, self.num_convs[l])
 
-            self.logits = conv_3d(x, 1, self.conf.num_cls, 'Output_layer', self.conf.use_BN, self.is_training_pl)
+            self.logits = conv_2d(x, 1, self.conf.num_cls, 'Output_layer', self.conf.use_BN, self.is_training_pl)
 
     def conv_block_down(self, layer_input, num_convolutions):
         x = layer_input
@@ -51,7 +51,7 @@ class VNet(BaseModel):
         if n_channels == 1:
             n_channels = self.conf.start_channel_num
         for i in range(num_convolutions):
-            x = conv_3d(inputs=x,
+            x = conv_2d(inputs=x,
                         filter_size=self.k_size,
                         num_filters=n_channels,
                         layer_name='conv_' + str(i + 1),
@@ -68,7 +68,7 @@ class VNet(BaseModel):
         x = tf.concat((layer_input, fine_grained_features), axis=-1)
         n_channels = get_num_channels(layer_input)
         for i in range(num_convolutions):
-            x = conv_3d(inputs=x,
+            x = conv_2d(inputs=x,
                         filter_size=self.k_size,
                         num_filters=n_channels,
                         layer_name='conv_' + str(i + 1),
@@ -82,7 +82,7 @@ class VNet(BaseModel):
 
     def down_conv(self, x):
         num_out_channels = get_num_channels(x) * 2
-        x = conv_3d(inputs=x,
+        x = conv_2d(inputs=x,
                     filter_size=2,
                     num_filters=num_out_channels,
                     layer_name='conv_down',
@@ -94,7 +94,7 @@ class VNet(BaseModel):
 
     def up_conv(self, x):
         num_out_channels = get_num_channels(x) // 2
-        x = deconv_3d(inputs=x,
+        x = deconv_2d(inputs=x,
                       filter_size=2,
                       num_filters=num_out_channels,
                       layer_name='conv_up',
