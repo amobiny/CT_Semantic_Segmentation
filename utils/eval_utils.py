@@ -24,9 +24,35 @@ def get_hist(y_pred, y, num_cls):
     return hist
 
 
-def var_calculate(pred, prob_variance):
+def var_calculate_2d(pred, prob_variance):
     """
-    computes the uncertainty measure for a single scan
+    computes the uncertainty measure for a single image
+    :param pred: predicted label, shape is [#images, image_h, image_w]
+    :param prob_variance: the total variance for ALL classes wrt each pixel,
+                        is of shape [#images, image_h, image_w, C]
+    :return: corresponding variance of shape [#images, image_h, image_w]
+    """
+    image_h, image_w = prob_variance.shape[1], prob_variance.shape[2]
+    NUM_CLASS = np.shape(prob_variance)[-1]
+    var_one = np.zeros((0, image_h, image_w))
+    for ii in range(pred.shape[0]):
+        pred_ii = np.reshape(pred[ii], [-1])
+        var_sep = []    # var_sep is the corresponding variance if this pixel choose label k
+        length_cur = 0  # length_cur represent how many pixels has been read for one image
+        for row in np.reshape(prob_variance[ii], [image_h * image_w, NUM_CLASS]):
+            temp = row[pred_ii[length_cur]]
+            length_cur += 1
+            var_sep.append(temp)
+        var_o = np.reshape(var_sep, [1, image_h, image_w])
+        # var_o is the corresponding variance in terms of the "optimal" label
+
+        var_one = np.concatenate((var_one, var_o), axis=0)
+    return var_one
+
+
+def var_calculate_3d(pred, prob_variance):
+    """
+    computes the uncertainty measure for a single image
     :param pred: predicted label, shape is [image_h, image_w, image_d]
     :param prob_variance: the total variance for ALL classes, is of shape [image_h, image_w, image_d, C]
     :return: corresponding variance of shape [image_h, image_w, image_d]
@@ -35,13 +61,11 @@ def var_calculate(pred, prob_variance):
     image_h, image_w, image_d = prob_variance.shape[0], prob_variance.shape[1], prob_variance.shape[2]
     NUM_CLASS = np.shape(prob_variance)[-1]
     var_sep = []    # var_sep is the corresponding variance if this pixel choose label k
-    length_cur = 0  # length_cur represent how many pixels has been read for one images
+    length_cur = 0  # length_cur represent how many pixels has been read for one image
     for row in np.reshape(prob_variance, [image_h * image_w * image_d, NUM_CLASS]):
         temp = row[pred[length_cur]]
         length_cur += 1
         var_sep.append(temp)
     var_one = np.reshape(var_sep, [image_h, image_w, image_d])
     # var_one is the corresponding variance in terms of the "optimal" label
-
     return var_one
-

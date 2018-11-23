@@ -7,7 +7,7 @@ from matplotlib import gridspec
 from utils.plot_utils import label_to_color_image
 
 all_files = glob.glob('/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation/'
-                      'data_preparation/our_data/4_correctMask_normalized/train/*h5')
+                      'data_preparation/our_data/4_correctMask_normalized/no_spleen/*h5')
 LABELS = ['background', 'liver', 'spleen', 'kidney', 'bone', 'vessel']
 
 
@@ -45,7 +45,7 @@ def vis_segmentation(image, seg_map, label_names=None, image_name=None):
 for i, file_path in enumerate(all_files):
     file_name = file_path.split('/')[-1].split('.')[0]
     dest_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation/' \
-                'data_preparation/our_data/4_correctMask_normalized/train_images/' + file_name
+                'data_preparation/our_data/4_correctMask_normalized/no_spleen_images/' + file_name
     if not os.path.exists(dest_path):
         os.makedirs(dest_path)
     h5f = h5py.File(file_path, 'r')

@@ -15,28 +15,26 @@ class DataLoader(object):
         self.num_tr = cfg.num_tr
         self.height, self.width, self.depth, self.channel = cfg.height, cfg.width, cfg.depth, cfg.channel
         self.project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
-        self.train_file = self.project_path + '/data_preparation/our_data/6_2d/train_2d'
-        self.valid_file = self.project_path + '/data_preparation/our_data/6_2d/test_2d.h5'
-        self.test_file = self.project_path + '/data_preparation/our_data/6_2d/test_2d.h5'
-        # self.num_train = self.count_num_samples(mode='train')   # list of number of samples in each train file
-        self.num_train = [8130, 8967, 7780, 8197, 8252, 7499]   # list of number of samples in each train file
+        self.train_file = self.project_path + '/data_preparation/CamVid/train.h5'
+        self.valid_file = self.project_path + '/data_preparation/CamVid/valid.h5'
+        self.test_file = self.project_path + '/data_preparation/CamVid/test.h5'
+        self.num_train = self.count_num_samples(mode='train')   # list of number of samples in each train file
 
     def next_batch(self, start=None, end=None, mode='train'):
         if mode == 'train':
-            train_num = np.random.randint(len(self.num_train))
-            img_idx = np.sort(np.random.choice(self.num_train[train_num], size=self.batch_size, replace=False))
-            h5f = h5py.File(self.train_file + '_' + str(train_num) + '.h5', 'r')
-            x = h5f['x_norm'][list(img_idx)]
+            img_idx = np.sort(np.random.choice(self.num_train, size=self.batch_size, replace=False))
+            h5f = h5py.File(self.train_file, 'r')
+            x = h5f['x'][list(img_idx)]
             y = h5f['y'][list(img_idx)]
             h5f.close()
         elif mode == 'valid':
             h5f = h5py.File(self.valid_file, 'r')
-            x = h5f['x_norm'][start:end]
+            x = h5f['x'][start:end]
             y = h5f['y'][start:end]
             h5f.close()
         else:
             h5f = h5py.File(self.test_file, 'r')
-            x = h5f['x_norm'][start:end]
+            x = h5f['x'][start:end]
             y = h5f['y'][start:end]
             h5f.close()
         return x, y
@@ -44,12 +42,9 @@ class DataLoader(object):
     def count_num_samples(self, mode='valid'):
         if mode == 'train':     # count and store the number of samples from each train file
             print('counting the number of train samples........')
-            l = len(glob.glob(self.project_path + '/data_preparation/our_data/6_2d/*.h5')) - 1  # number of train files
-            num_ = []
-            for i in range(l):
-                h5f = h5py.File(self.train_file + '_' + str(i) + '.h5', 'r')
-                num_.append(h5f['y'][:].shape[0])
-                h5f.close()
+            h5f = h5py.File(self.train_file, 'r')
+            num_ = h5f['y'][:].shape[0]
+            h5f.close()
         elif mode == 'valid':
             h5f = h5py.File(self.valid_file, 'r')
             num_ = h5f['y'][:].shape[0]

@@ -48,51 +48,74 @@ def label_to_color_image(label):
     return colormap[label]
 
 
-def vis_segmentation(image, seg_map_gt, seg_map_pred, var_map_pred=None, label_names=None, image_name=None):
+def vis_segmentation(image, seg_map_gt, seg_map_pred, var_map_pred=None, cls_uncert=None, label_names=None, image_name=None):
     """Visualizes input image, segmentation map and overlay view."""
     FULL_LABEL_MAP = np.arange(len(label_names)).reshape(len(label_names), 1)
     FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
-    plt.figure(figsize=(20, 5))
-    grid_spec = gridspec.GridSpec(1, 5, width_ratios=[6, 6, 6, 6, 1])
+    if cls_uncert is not None:
+        plt.figure(figsize=(20, 8))
+        grid_spec = gridspec.GridSpec(2, 6)
+    else:
+        plt.figure(figsize=(20, 5))
+        grid_spec = gridspec.GridSpec(1, 5, width_ratios=[6, 6, 6, 6, 1])
 
     # plot input image
-    plt.subplot(grid_spec[0])
+    ii = 0
+    plt.subplot(grid_spec[ii])
     plt.imshow(image, cmap='gray')
     plt.axis('off')
     plt.title('input image')
 
     # plot ground truth mask
-    plt.subplot(grid_spec[1])
+    ii += 1
+    plt.subplot(grid_spec[ii])
     seg_image = label_to_color_image(seg_map_gt.astype(np.int32)).astype(np.uint8)
     plt.imshow(seg_image)
     plt.axis('off')
     plt.title('ground truth map')
 
-    plt.subplot(grid_spec[2])
+    ii += 1
+    plt.subplot(grid_spec[ii])
     seg_image = label_to_color_image(seg_map_pred.astype(np.int32)).astype(np.uint8)
     plt.imshow(seg_image)
     plt.axis('off')
     plt.title('prediction map')
 
-    plt.subplot(grid_spec[3])
-    if var_map_pred is None:
-        plt.imshow(image, cmap='gray')
-        plt.imshow(seg_image, alpha=0.4)
-        plt.axis('off')
-        plt.title('prediction overlay')
-    else:
+    ii += 1
+    plt.subplot(grid_spec[ii])
+    plt.imshow(image, cmap='gray')
+    plt.imshow(seg_image, alpha=0.4)
+    plt.axis('off')
+    plt.title('prediction overlay')
+    if var_map_pred is not None:
+        ii += 1
+        ax = plt.subplot(grid_spec[ii])
+        plt.subplot(grid_spec[ii])
         plt.imshow(var_map_pred, cmap='Greys')
-        plt.axis('off')
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
         plt.title('model uncertainty')
 
+    ii += 1
     unique_labels = np.unique(np.concatenate((np.unique(seg_map_gt), np.unique(seg_map_pred)), 0)).astype(np.int32)
-    ax = plt.subplot(grid_spec[4])
+    ax = plt.subplot(grid_spec[ii])
     plt.imshow(FULL_COLOR_MAP[unique_labels].astype(np.uint8), interpolation='nearest')
     ax.yaxis.tick_right()
     plt.yticks(range(len(unique_labels)), label_names[unique_labels])
     plt.xticks([], [])
     ax.tick_params(width=0.0)
     plt.grid('off')
+
+    if cls_uncert is not None:
+        for i, name in enumerate(label_names):
+            ax = plt.subplot(grid_spec[i + ii + 1])
+            plt.subplot(grid_spec[i + ii + 1])
+            plt.imshow(cls_uncert[:, :, i], cmap='Greys')
+            # plt.axis('off')
+            plt.title(name)
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+
     plt.savefig(image_name)
 
 
@@ -110,7 +133,7 @@ def plot_save_preds_3d(images, masks, mask_preds, var_preds=None, slice_numbers=
             vis_segmentation(image, mask, mask_pred, var_pred, label_names, img_name)
 
 
-def plot_save_preds_2d(images, masks, mask_preds, var_preds=None, path=None, label_names=None):
+def plot_save_preds_2d(images, masks, mask_preds, var_preds=None, cls_unc=None, path=None, label_names=None):
     slice_numbers = list(range(masks.shape[0]))
     if not os.path.exists(path):
         os.makedirs(path)
@@ -119,9 +142,14 @@ def plot_save_preds_2d(images, masks, mask_preds, var_preds=None, path=None, lab
             img_name = os.path.join(path, str(slice_num) + '.png')
             vis_segmentation(image, mask, mask_pred, label_names=label_names, image_name=img_name)
     else:
-        for slice_num, image, mask, mask_pred, var_pred in zip(slice_numbers, images, masks, mask_preds, var_preds):
-            img_name = os.path.join(path, str(slice_num) + '.png')
-            vis_segmentation(image, mask, mask_pred, var_pred, label_names, img_name)
+        if cls_unc is None:
+            for slice_num, image, mask, mask_pred, var_pred in zip(slice_numbers, images, masks, mask_preds, var_preds):
+                img_name = os.path.join(path, str(slice_num) + '.png')
+                vis_segmentation(image, mask, mask_pred, var_pred, label_names, img_name)
+        else:
+            for slice_num, image, mask, mask_pred, var_pred, cls_un in zip(slice_numbers, images, masks, mask_preds, var_preds, cls_unc):
+                img_name = os.path.join(path, str(slice_num) + '.png')
+                vis_segmentation(image, mask, mask_pred, var_pred, cls_un, label_names, img_name)
 
 
 if __name__ == '__main__':

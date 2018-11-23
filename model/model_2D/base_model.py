@@ -1,9 +1,8 @@
 import tensorflow as tf
 from tqdm import tqdm
-from DataLoaders.Data_Loader_2D import DataLoader
 from utils.plot_utils import plot_save_preds_2d
 from utils.loss_utils import cross_entropy, dice_coeff, weighted_cross_entropy
-from utils.eval_utils import get_hist, compute_iou, var_calculate
+from utils.eval_utils import get_hist, compute_iou, var_calculate_2d
 import os
 import numpy as np
 
@@ -114,7 +113,14 @@ class BaseModel(object):
             print('----> Continue Training from step #{}'.format(self.conf.reload_step))
         else:
             print('----> Start Training')
+        if self.conf.data == 'ct':
+            from DataLoaders.Data_Loader_2D import DataLoader
+        elif self.conf.data == 'camvid':
+            from DataLoaders.CamVid_loader import DataLoader
+        else:
+            print('wrong data name')
         self.data_reader = DataLoader(self.conf)
+
         self.numValid = self.data_reader.count_num_samples(mode='valid')
         self.num_val_batch = int(self.numValid / self.conf.val_batch_size)
         for train_step in range(self.conf.reload_step, self.conf.reload_step + self.conf.max_step + 1):
@@ -222,35 +228,49 @@ class BaseModel(object):
         num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
         hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
         self.sess.run(tf.local_variables_initializer())
-        scan_num = 0
+        all_inputs = np.zeros((0, self.conf.height, self.conf.width))
+        all_mask = np.zeros((0, self.conf.height, self.conf.width))
+        all_pred = np.zeros((0, self.conf.height, self.conf.width))
+        all_var = np.zeros((0, self.conf.height, self.conf.width))
+        cls_uncertainty = np.zeros((0, self.conf.height, self.conf.width, self.conf.num_cls))
         for step in tqdm(range(num_batch)):
             start = self.conf.val_batch_size * step
             end = self.conf.val_batch_size * (step + 1)
             data_x, data_y = self.data_reader.next_batch(start=start, end=end, mode=dataset)
-            mask_pred_mc = [np.zeros((self.conf.val_batch_size, self.conf.height, self.conf.width, self.conf.channel))
+            mask_pred_mc = [np.zeros((self.conf.val_batch_size, self.conf.height, self.conf.width))
                             for _ in range(self.conf.monte_carlo_simulations)]
             mask_prob_mc = [np.zeros((self.conf.val_batch_size, self.conf.height, self.conf.width, self.conf.num_cls))
                             for _ in range(self.conf.monte_carlo_simulations)]
+            feed_dict = {self.inputs_pl: data_x,
+                         self.labels_pl: data_y,
+                         self.is_training_pl: True,
+                         self.with_dropout_pl: True,
+                         self.keep_prob_pl: self.conf.keep_prob}
             for mc_iter in range(self.conf.monte_carlo_simulations):
-                feed_dict = {self.inputs_pl: data_x,
-                             self.labels_pl: data_y,
-                             self.is_training_pl: True,
-                             self.with_dropout_pl: True,
-                             self.keep_prob_pl: self.conf.keep_prob}
                 inputs, mask, mask_prob, mask_pred = self.sess.run([self.inputs_pl,
                                                                     self.labels_pl,
                                                                     self.y_prob,
                                                                     self.y_pred], feed_dict=feed_dict)
-                mask_prob_mc[mc_iter] = np.squeeze(mask_prob, axis=0)
-                mask_pred_mc[mc_iter] = np.squeeze(mask_pred, axis=0)
+                mask_prob_mc[mc_iter] = mask_prob
+                mask_pred_mc[mc_iter] = mask_pred
 
             prob_mean = np.nanmean(mask_prob_mc, axis=0)
             prob_variance = np.var(mask_prob_mc, axis=0)
             pred = np.argmax(prob_mean, axis=-1)
-            var_one = var_calculate(pred, prob_variance)
+            var_one = np.nanmean(prob_variance, axis=-1)
+            # var_one = var_calculate_2d(pred, prob_variance)
             hist += get_hist(pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
-            self.visualize_me(np.squeeze(inputs), mask, pred, var_one, train_step=train_step, mode='test')
-            scan_num += 1
+
+            # ii = np.random.randint(self.conf.val_batch_size)
+            ii = 1
+            all_inputs = np.concatenate((all_inputs, inputs[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
+            all_mask = np.concatenate((all_mask, mask[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
+            all_pred = np.concatenate((all_pred, pred[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
+            all_var = np.concatenate((all_var, var_one[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
+            cls_uncertainty = np.concatenate((cls_uncertainty,
+                                              prob_variance[ii].reshape(-1, self.conf.height, self.conf.width, self.conf.num_cls)),
+                                             axis=0)
+        self.visualize_me(all_inputs, all_mask, all_pred, all_var, cls_uncertainty, train_step=train_step, mode='test')
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
 
@@ -262,7 +282,7 @@ class BaseModel(object):
               .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
         print('-' * 60)
 
-    def visualize_me(self, x, y, y_pred, var=None, train_step=None, img_idx=None,
+    def visualize_me(self, x, y, y_pred, var=None, cls_uncertainty=None, train_step=None, img_idx=None,
                      mode='valid'):  # all of shape (#images, 512, 512)
         if mode == 'valid':
             dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
@@ -275,4 +295,8 @@ class BaseModel(object):
             # run it either in validation mode or when non-bayesian network
             plot_save_preds_2d(x, y, y_pred, path=dest_path, label_names=np.array(self.conf.label_name))
         else:
-            plot_save_preds_2d(x, y, y_pred, var, path=dest_path + '/bayes', label_names=np.array(self.conf.label_name))
+            if cls_uncertainty is None:
+                plot_save_preds_2d(x, y, y_pred, var, path=dest_path + '/bayes', label_names=np.array(self.conf.label_name))
+            else:
+                plot_save_preds_2d(x, y, y_pred, var, cls_uncertainty, path=dest_path + '/bayes',
+                                   label_names=np.array(self.conf.label_name))
