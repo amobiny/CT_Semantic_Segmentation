@@ -38,7 +38,6 @@ def write_spec(args):
     config_file.write('batch_size: ' + str(args.batch_size) + '\n')
     config_file.write('data_augmentation: ' + str(args.data_augment) + '\n')
     config_file.write('max_angle: ' + str(args.max_angle) + '\n')
-    config_file.write('num_training: ' + str(args.num_tr) + '\n')
     config_file.write('keep_prob: ' + str(args.keep_prob) + '\n')
     config_file.write('batch_normalization: ' + str(args.use_BN) + '\n')
     config_file.write('kernel_size: ' + str(args.filter_size) + '\n')

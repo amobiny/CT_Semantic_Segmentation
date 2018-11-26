@@ -150,6 +150,12 @@ class BaseModel(object):
 
         print('loading the model.......')
         self.reload(step_num)
+        if self.conf.data == 'ct':
+            from DataLoaders.Data_Loader_2D import DataLoader
+        elif self.conf.data == 'camvid':
+            from DataLoaders.CamVid_loader import DataLoader
+        else:
+            print('wrong data name')
 
         self.data_reader = DataLoader(self.conf)
         self.numTest = self.data_reader.count_num_samples(mode='test')
@@ -196,7 +202,7 @@ class BaseModel(object):
             self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
             mask_pred = self.sess.run(self.y_pred, feed_dict=feed_dict)
             hist += get_hist(mask_pred.flatten(), data_y.flatten(), num_cls=self.conf.num_cls)
-            if plot_inputs.shape[0] < 30 and np.random.randint(2):  # randomly select slices to plot and save
+            if plot_inputs.shape[0] < 100 and np.random.randint(2):  # randomly select a few slices to plot and save
                 idx = np.random.randint(self.conf.batch_size)
                 plot_inputs = np.concatenate((plot_inputs, data_x[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
                 plot_mask = np.concatenate((plot_mask, data_y[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
@@ -296,7 +302,8 @@ class BaseModel(object):
             plot_save_preds_2d(x, y, y_pred, path=dest_path, label_names=np.array(self.conf.label_name))
         else:
             if cls_uncertainty is None:
-                plot_save_preds_2d(x, y, y_pred, var, path=dest_path + '/bayes', label_names=np.array(self.conf.label_name))
+                plot_save_preds_2d(x, y, y_pred, var, path=dest_path + '/bayes',
+                                   label_names=np.array(self.conf.label_name))
             else:
                 plot_save_preds_2d(x, y, y_pred, var, cls_uncertainty, path=dest_path + '/bayes',
                                    label_names=np.array(self.conf.label_name))

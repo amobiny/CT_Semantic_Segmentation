@@ -12,7 +12,6 @@ class DataLoader(object):
         self.augment = cfg.data_augment
         self.max_angle = cfg.max_angle
         self.batch_size = cfg.batch_size
-        self.num_tr = cfg.num_tr
         self.height, self.width, self.depth, self.channel = cfg.height, cfg.width, cfg.depth, cfg.channel
         self.project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
         self.train_file = self.project_path + '/data_preparation/our_data/6_2d/train_2d'

@@ -6,8 +6,8 @@ from model.model_2D.ops import get_num_channels
 
 class VNet(BaseModel):
     def __init__(self, sess, conf,
-                 num_levels=4,
-                 num_convs=(2, 3, 3, 4),
+                 num_levels=6,
+                 num_convs=(2, 3, 3, 4, 4, 4),
                  bottom_convs=5,
                  act_fcn=prelu):
 

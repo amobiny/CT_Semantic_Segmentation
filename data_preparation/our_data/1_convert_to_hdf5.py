@@ -1,7 +1,6 @@
 import glob
 import numpy as np
 import time
-from tqdm import *
 import h5py
 import os
 project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
@@ -14,13 +13,16 @@ img_counter = 0
 
 for file_path in all_files:
     start_time = time.time()
-    file_name = file_path.split('/')[-1].split('.')[0]
+    name_splitted = file_path.split('/')[-1].split('.')
+    if len(name_splitted) > 3:
+        file_name = name_splitted[0] + '_' + name_splitted[1] + '_' + name_splitted[2] + '_' + name_splitted[-3]
+    else:
+        file_name = file_path.split('/')[-1].split('.')[0]
     hdf5_file_path = destination_path + file_name + '.h5'
     empty_file_path = project_path + '/data_preparation/our_data/3_empty_files/' + file_name + '.h5'
     if os.path.exists(hdf5_file_path) or os.path.exists(empty_file_path):
         continue
     with open(file_path, 'r') as content_file:
-        file_name = file_path.split('/')[-1].split('.')[0]
         img_counter += 1
         print('-' * 50)
         print('reading file #{}: {}'.format(img_counter, file_name))
