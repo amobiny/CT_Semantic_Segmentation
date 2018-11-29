@@ -1,6 +1,6 @@
 import tensorflow as tf
 from model.model_2D.base_model import BaseModel
-from model.model_2D.ops import conv_2d, deconv_2d, prelu
+from model.model_2D.ops import conv_2d, deconv_2d, prelu, drop_connect
 from model.model_2D.ops import get_num_channels
 
 
@@ -60,8 +60,8 @@ class VNet(BaseModel):
             if i == num_convolutions - 1:
                 x = x + layer_input
             x = self.act_fcn(x, name='prelu_' + str(i + 1))
-            x = tf.layers.dropout(x, rate=(1 - self.keep_prob_pl), training=self.with_dropout_pl)
-            # x = tf.nn.dropout(x, keep_prob=self.conf.keep_prob)
+            # x = tf.layers.dropout(x, rate=(1 - self.keep_prob_pl), training=self.with_dropout_p)
+            x = tf.nn.dropout(x, keep_prob=self.keep_prob_pl)
         return x
 
     def conv_block_up(self, layer_input, fine_grained_features, num_convolutions):
@@ -77,7 +77,8 @@ class VNet(BaseModel):
             if i == num_convolutions - 1:
                 x = x + layer_input
             x = self.act_fcn(x, name='prelu_' + str(i + 1))
-            x = tf.layers.dropout(x, rate=(1 - self.keep_prob_pl), training=self.with_dropout_pl)
+            # x = tf.layers.dropout(x, rate=(1 - self.keep_prob_pl), training=self.with_dropout_pl)
+            x = tf.nn.dropout(x, keep_prob=self.keep_prob_pl)
         return x
 
     def down_conv(self, x):

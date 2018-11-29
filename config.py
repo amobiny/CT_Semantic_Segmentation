@@ -1,10 +1,10 @@
 import tensorflow as tf
 
 flags = tf.app.flags
-flags.DEFINE_string('mode', 'test', 'train or test')
+flags.DEFINE_string('mode', 'train', 'train or test')
 flags.DEFINE_boolean('bayes', False, 'Whether to use Bayesian network or not')
-flags.DEFINE_integer('monte_carlo_simulations', 100, 'The number of monte carlo simulation runs')
-flags.DEFINE_integer('reload_step', 103000, 'Reload step to continue training')
+flags.DEFINE_integer('monte_carlo_simulations', 50, 'The number of monte carlo simulation runs')
+flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
 
 # Training logs
 flags.DEFINE_integer('max_step', 300000, '# of step for training')
@@ -38,10 +38,10 @@ flags.DEFINE_integer('depth', 32, 'Network depth size during training (if random
 flags.DEFINE_integer('Dcut_size', 32, 'Depth of the validation slices')
 
 # Directories
-flags.DEFINE_string('run_name', 'run2_weighted', 'Run name')         ############
+flags.DEFINE_string('run_name', 'run3_densenet_weighted', 'Run name')         ############
 flags.DEFINE_string('logdir', './Results/log_dir/', 'Logs directory')
 flags.DEFINE_string('modeldir', './Results/model_dir/', 'Model directory')
-flags.DEFINE_string('imagedir', './Results/image_dir_test/', 'Directory to save sample predictions')
+flags.DEFINE_string('imagedir', './Results/image_dir_bayes/', 'Directory to save sample predictions')
 flags.DEFINE_string('model_name', 'model', 'Model file name')
 
 # network architecture
@@ -54,6 +54,10 @@ flags.DEFINE_integer('start_channel_num', 16, 'start number of outputs for the f
 flags.DEFINE_integer('filter_size', 3, 'Filter size for the conv and deconv layers')
 flags.DEFINE_integer('pool_filter_size', 2, 'Filter size for pooling layers')
 flags.DEFINE_float('keep_prob', 0.5, 'Probability of keeping a unit in drop-out')
+
+#
+flags.DEFINE_float('theta_down', 0.3, 'transition down layers factor')
+flags.DEFINE_float('theta_up', 0.3, 'transition up layers factor')
 flags.DEFINE_integer('growth_rate', 32, 'Growth rate of the DenseNet')
 
 args = tf.app.flags.FLAGS

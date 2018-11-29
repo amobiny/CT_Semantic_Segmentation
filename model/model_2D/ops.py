@@ -156,11 +156,11 @@ def max_pool(x, ksize, stride, name):
 
 def avg_pool(x, ksize, stride, scope):
     """Create an average pooling layer."""
-    return tf.nn.avg_pool3d(x,
-                            ksize=[1, ksize, ksize, 1],
-                            strides=[1, stride, stride, 1],
-                            padding="VALID",
-                            name=scope)
+    return tf.nn.avg_pool(x,
+                          ksize=[1, ksize, ksize, 1],
+                          strides=[1, stride, stride, 1],
+                          padding="VALID",
+                          name=scope)
 
 
 def batch_norm(bias_input, is_training, scope):
@@ -217,9 +217,14 @@ def Relu(x):
     return tf.nn.relu(x)
 
 
-def drop_out(x, keep_prob):
-    return tf.nn.dropout(x, keep_prob)
+#
+# def drop_out(x, keep_prob):
+#     return tf.nn.dropout(x, keep_prob)
 
 
 def concatenation(layers):
     return tf.concat(layers, axis=-1)
+
+
+def drop_connect(w, keep_prob):
+    return tf.nn.dropout(w, keep_prob=keep_prob) * keep_prob

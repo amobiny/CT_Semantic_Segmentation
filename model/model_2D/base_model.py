@@ -12,7 +12,6 @@ class BaseModel(object):
     def __init__(self, sess, conf):
         self.sess = sess
         self.conf = conf
-        self.bayes = conf.bayes
         self.input_shape = [None, self.conf.height, self.conf.width, self.conf.channel]
         self.output_shape = [None, self.conf.height, self.conf.width]
         self.create_placeholders()
@@ -202,13 +201,13 @@ class BaseModel(object):
             self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
             mask_pred = self.sess.run(self.y_pred, feed_dict=feed_dict)
             hist += get_hist(mask_pred.flatten(), data_y.flatten(), num_cls=self.conf.num_cls)
-            if plot_inputs.shape[0] < 100 and np.random.randint(2):  # randomly select a few slices to plot and save
+            if plot_inputs.shape[0] < 200 and np.random.randint(2):  # randomly select a few slices to plot and save
                 idx = np.random.randint(self.conf.batch_size)
                 plot_inputs = np.concatenate((plot_inputs, data_x[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
                 plot_mask = np.concatenate((plot_mask, data_y[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
                 plot_mask_pred = np.concatenate((plot_mask_pred, mask_pred[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
 
-        self.visualize_me(plot_inputs, plot_mask, plot_mask_pred, train_step=train_step, mode='valid')
+        self.visualize(plot_inputs, plot_mask, plot_mask_pred, train_step=train_step, mode='valid')
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
         loss, acc = self.sess.run([self.mean_loss, self.mean_accuracy])
@@ -267,16 +266,17 @@ class BaseModel(object):
             # var_one = var_calculate_2d(pred, prob_variance)
             hist += get_hist(pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
 
-            # ii = np.random.randint(self.conf.val_batch_size)
-            ii = 1
-            all_inputs = np.concatenate((all_inputs, inputs[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
-            all_mask = np.concatenate((all_mask, mask[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
-            all_pred = np.concatenate((all_pred, pred[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
-            all_var = np.concatenate((all_var, var_one[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
-            cls_uncertainty = np.concatenate((cls_uncertainty,
-                                              prob_variance[ii].reshape(-1, self.conf.height, self.conf.width, self.conf.num_cls)),
-                                             axis=0)
-        self.visualize_me(all_inputs, all_mask, all_pred, all_var, cls_uncertainty, train_step=train_step, mode='test')
+            if all_inputs.shape[0] < 500 and np.random.randint(2):
+                # ii = np.random.randint(self.conf.val_batch_size)
+                ii = 1
+                all_inputs = np.concatenate((all_inputs, inputs[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
+                all_mask = np.concatenate((all_mask, mask[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
+                all_pred = np.concatenate((all_pred, pred[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
+                all_var = np.concatenate((all_var, var_one[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
+                cls_uncertainty = np.concatenate((cls_uncertainty,
+                                                  prob_variance[ii].reshape(-1, self.conf.height, self.conf.width, self.conf.num_cls)),
+                                                 axis=0)
+        self.visualize(all_inputs, all_mask, all_pred, all_var, cls_uncertainty, train_step=train_step, mode='test')
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
 
@@ -288,7 +288,7 @@ class BaseModel(object):
               .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
         print('-' * 60)
 
-    def visualize_me(self, x, y, y_pred, var=None, cls_uncertainty=None, train_step=None, img_idx=None,
+    def visualize(self, x, y, y_pred, var=None, cls_uncertainty=None, train_step=None, img_idx=None,
                      mode='valid'):  # all of shape (#images, 512, 512)
         if mode == 'valid':
             dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
