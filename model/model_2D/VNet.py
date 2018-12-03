@@ -43,7 +43,8 @@ class VNet(BaseModel):
                         x = self.up_conv(x)
                         x = self.conv_block_up(x, f, self.num_convs[l])
 
-            self.logits = conv_2d(x, 1, self.conf.num_cls, 'Output_layer', self.conf.use_BN, self.is_training_pl)
+            self.logits = conv_2d(x, 1, self.conf.num_cls, 'Output_layer', self.conf.use_BN,
+                                  self.is_training_pl, keep_prob=1)
 
     def conv_block_down(self, layer_input, num_convolutions):
         x = layer_input
@@ -56,12 +57,13 @@ class VNet(BaseModel):
                         num_filters=n_channels,
                         layer_name='conv_' + str(i + 1),
                         add_batch_norm=self.conf.use_BN,
-                        is_train=self.is_training_pl)
+                        is_train=self.is_training_pl,
+                        keep_prob=self.keep_prob_pl)
             if i == num_convolutions - 1:
                 x = x + layer_input
             x = self.act_fcn(x, name='prelu_' + str(i + 1))
             # x = tf.layers.dropout(x, rate=(1 - self.keep_prob_pl), training=self.with_dropout_p)
-            x = tf.nn.dropout(x, keep_prob=self.keep_prob_pl)
+            # x = tf.nn.dropout(x, keep_prob=self.keep_prob_pl)
         return x
 
     def conv_block_up(self, layer_input, fine_grained_features, num_convolutions):
@@ -73,12 +75,13 @@ class VNet(BaseModel):
                         num_filters=n_channels,
                         layer_name='conv_' + str(i + 1),
                         add_batch_norm=self.conf.use_BN,
-                        is_train=self.is_training_pl)
+                        is_train=self.is_training_pl,
+                        keep_prob=self.keep_prob_pl)
             if i == num_convolutions - 1:
                 x = x + layer_input
             x = self.act_fcn(x, name='prelu_' + str(i + 1))
             # x = tf.layers.dropout(x, rate=(1 - self.keep_prob_pl), training=self.with_dropout_pl)
-            x = tf.nn.dropout(x, keep_prob=self.keep_prob_pl)
+            # x = tf.nn.dropout(x, keep_prob=self.keep_prob_pl)
         return x
 
     def down_conv(self, x):
@@ -90,6 +93,7 @@ class VNet(BaseModel):
                     stride=2,
                     add_batch_norm=self.conf.use_BN,
                     is_train=self.is_training_pl,
+                    keep_prob=self.keep_prob_pl,
                     activation=self.act_fcn)
         return x
 

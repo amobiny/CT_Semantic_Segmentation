@@ -201,7 +201,7 @@ class BaseModel(object):
             self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
             mask_pred = self.sess.run(self.y_pred, feed_dict=feed_dict)
             hist += get_hist(mask_pred.flatten(), data_y.flatten(), num_cls=self.conf.num_cls)
-            if plot_inputs.shape[0] < 200 and np.random.randint(2):  # randomly select a few slices to plot and save
+            if plot_inputs.shape[0] < 100 and np.random.randint(2):  # randomly select a few slices to plot and save
                 idx = np.random.randint(self.conf.batch_size)
                 plot_inputs = np.concatenate((plot_inputs, data_x[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
                 plot_mask = np.concatenate((plot_mask, data_y[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)

@@ -38,10 +38,10 @@ flags.DEFINE_integer('depth', 32, 'Network depth size during training (if random
 flags.DEFINE_integer('Dcut_size', 32, 'Depth of the validation slices')
 
 # Directories
-flags.DEFINE_string('run_name', 'run3_densenet_weighted', 'Run name')         ############
+flags.DEFINE_string('run_name', 'run3_weighted_dropcon', 'Run name')         ############
 flags.DEFINE_string('logdir', './Results/log_dir/', 'Logs directory')
 flags.DEFINE_string('modeldir', './Results/model_dir/', 'Model directory')
-flags.DEFINE_string('imagedir', './Results/image_dir_bayes/', 'Directory to save sample predictions')
+flags.DEFINE_string('imagedir', './Results/image_dir/', 'Directory to save sample predictions')
 flags.DEFINE_string('model_name', 'model', 'Model file name')
 
 # network architecture
