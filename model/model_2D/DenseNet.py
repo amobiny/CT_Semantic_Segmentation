@@ -26,7 +26,7 @@ class DenseNet(BaseModel):
         with tf.variable_scope('DenseNet'):
             feature_list = list()
             shape_list = list()
-            x = conv_2d(x_input, filter_size=3, num_filters=self.trans_out, stride=1, layer_name='conv1',
+            x = conv_2d(x_input, filter_size=3, num_filters=self.trans_out, layer_name='conv1', activation=tf.nn.relu,
                         add_batch_norm=self.conf.use_BN, is_train=self.is_training_pl, add_reg=self.conf.use_reg)
             print('conv1 shape: {}'.format(x.get_shape()))
             shape_list.append(tf.shape(x))

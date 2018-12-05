@@ -5,6 +5,7 @@ from utils.other_utils import write_spec
 
 if args.dim == 2:
     from model.model_2D.VNet import VNet as Model
+    # from model.model_2D.Tiramisu import Tiramisu as Model
     # from model.model_2D.SegNet import SegNet as Model
     # from model.model_2D.DenseNet import DenseNet as Model
 else:

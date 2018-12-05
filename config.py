@@ -1,10 +1,10 @@
 import tensorflow as tf
 
 flags = tf.app.flags
-flags.DEFINE_string('mode', 'train', 'train or test')
-flags.DEFINE_boolean('bayes', False, 'Whether to use Bayesian network or not')
+flags.DEFINE_string('mode', 'test', 'train or test')
+flags.DEFINE_boolean('bayes', True, 'Whether to use Bayesian network or not')
 flags.DEFINE_integer('monte_carlo_simulations', 50, 'The number of monte carlo simulation runs')
-flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
+flags.DEFINE_integer('reload_step', 89500, 'Reload step to continue training')
 
 # Training logs
 flags.DEFINE_integer('max_step', 300000, '# of step for training')
