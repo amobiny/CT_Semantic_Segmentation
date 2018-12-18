@@ -69,3 +69,22 @@ def var_calculate_3d(pred, prob_variance):
     var_one = np.reshape(var_sep, [image_h, image_w, image_d])
     # var_one is the corresponding variance in terms of the "optimal" label
     return var_one
+
+
+def get_uncertainty_measure(x, y, y_pred, y_var):
+    """
+    computes the uncertainty measure
+    :param x: input images of shape [#images, height, width, channels]
+    :param y:input label of shape [#images, height, width]
+    :param y_pred: predicted masks of shape [#images, height, width]
+    :param y_var: uncertainty maps of shape [#images, height, width]
+    :return: network uncertainty measure; the bigger this metric is, the better the network is
+    """
+    wrong_pred = (y != y_pred).astype(int)
+    wrong_unc = np.sum(wrong_pred * y_var)      # we want this to be high
+
+    correct_pred = (y == y_pred).astype(int)
+    correct_unc = np.sum(correct_pred * y_var)      # we want this to be low
+
+    uncertain_metric = wrong_unc / correct_unc
+    return uncertain_metric

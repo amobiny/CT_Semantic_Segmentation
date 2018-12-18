@@ -2,7 +2,7 @@ import tensorflow as tf
 from tqdm import tqdm
 from utils.plot_utils import plot_save_preds_2d
 from utils.loss_utils import cross_entropy, dice_coeff, weighted_cross_entropy
-from utils.eval_utils import get_hist, compute_iou, var_calculate_2d
+from utils.eval_utils import get_hist, compute_iou, var_calculate_2d, get_uncertainty_measure
 import os
 import numpy as np
 
@@ -107,6 +107,7 @@ class BaseModel(object):
     def train(self):
         self.sess.run(tf.local_variables_initializer())
         self.best_validation_loss = 1000
+        self.best_mean_IOU = 0
         if self.conf.reload_step > 0:
             self.reload(self.conf.reload_step)
             print('----> Continue Training from step #{}'.format(self.conf.reload_step))
@@ -186,7 +187,7 @@ class BaseModel(object):
         num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
         self.sess.run(tf.local_variables_initializer())
         hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
-        plot_inputs = np.zeros((0, self.conf.height, self.conf.width))
+        plot_inputs = np.zeros((0, self.conf.height, self.conf.width, self.conf.channel))
         plot_mask = np.zeros((0, self.conf.height, self.conf.width))
         plot_mask_pred = np.zeros((0, self.conf.height, self.conf.width))
         for step in range(num_batch):
@@ -203,9 +204,12 @@ class BaseModel(object):
             hist += get_hist(mask_pred.flatten(), data_y.flatten(), num_cls=self.conf.num_cls)
             if plot_inputs.shape[0] < 100 and np.random.randint(2):  # randomly select a few slices to plot and save
                 idx = np.random.randint(self.conf.batch_size)
-                plot_inputs = np.concatenate((plot_inputs, data_x[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
-                plot_mask = np.concatenate((plot_mask, data_y[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
-                plot_mask_pred = np.concatenate((plot_mask_pred, mask_pred[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
+                plot_inputs = np.concatenate((plot_inputs, data_x[idx].reshape(1, self.conf.height, self.conf.width,
+                                                                               self.conf.channel)), axis=0)
+                plot_mask = np.concatenate((plot_mask, data_y[idx].reshape(1, self.conf.height, self.conf.width)),
+                                           axis=0)
+                plot_mask_pred = np.concatenate(
+                    (plot_mask_pred, mask_pred[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
 
         self.visualize(plot_inputs, plot_mask, plot_mask_pred, train_step=train_step, mode='valid')
         IOU, ACC = compute_iou(hist)
@@ -219,21 +223,22 @@ class BaseModel(object):
                 self.best_validation_loss = loss
                 print('>>>>>>>> model validation loss improved; saving the model......')
                 self.save(train_step)
+            elif mean_IOU < self.best_mean_IOU:
+                self.best_mean_IOU = mean_IOU
+                print('>>>>>>>> model mean IOU improved; saving the model......')
+                self.save(train_step)
 
-        print('After {0} training step: val_loss= {1:.4f}, val_acc={2:.01%}'.format(train_step, loss, acc))
-        print('- IOU: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
-              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}, mean_IoU={6:.01%}'
-              .format(IOU[0], IOU[1], IOU[2], IOU[3], IOU[4], IOU[5], mean_IOU))
-        print('- ACC: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
-              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}'
-              .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
-        print('-' * 60)
+        print('****** IoU & ACC ******')
+        print('Mean IoU = {0:.01%}'.format(mean_IOU))
+        for ii in range(self.conf.num_cls):
+            print('     - {0:<15}: IoU={1:<5.01%}, ACC={2:<5.01%}'.format(self.conf.label_name[ii], IOU[ii], ACC[ii]))
+        print('-' * 20)
 
     def MC_evaluate(self, dataset='valid', train_step=None):
         num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
         hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
         self.sess.run(tf.local_variables_initializer())
-        all_inputs = np.zeros((0, self.conf.height, self.conf.width))
+        all_inputs = np.zeros((0, self.conf.height, self.conf.width, self.conf.channel))
         all_mask = np.zeros((0, self.conf.height, self.conf.width))
         all_pred = np.zeros((0, self.conf.height, self.conf.width))
         all_var = np.zeros((0, self.conf.height, self.conf.width))
@@ -266,44 +271,49 @@ class BaseModel(object):
             # var_one = var_calculate_2d(pred, prob_variance)
             hist += get_hist(pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
 
-            if all_inputs.shape[0] < 500 and np.random.randint(2):
+            # if all_inputs.shape[0] < 6:
                 # ii = np.random.randint(self.conf.val_batch_size)
-                ii = 1
-                all_inputs = np.concatenate((all_inputs, inputs[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
-                all_mask = np.concatenate((all_mask, mask[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
-                all_pred = np.concatenate((all_pred, pred[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
-                all_var = np.concatenate((all_var, var_one[ii].reshape(-1, self.conf.height, self.conf.width)), axis=0)
-                cls_uncertainty = np.concatenate((cls_uncertainty,
-                                                  prob_variance[ii].reshape(-1, self.conf.height, self.conf.width, self.conf.num_cls)),
-                                                 axis=0)
-        self.visualize(all_inputs, all_mask, all_pred, all_var, cls_uncertainty, train_step=train_step, mode='test')
+                # ii = 1
+            all_inputs = np.concatenate((all_inputs, inputs.reshape(-1, self.conf.height, self.conf.width,
+                                                                    self.conf.channel)), axis=0)
+            all_mask = np.concatenate((all_mask, mask.reshape(-1, self.conf.height, self.conf.width)), axis=0)
+            all_pred = np.concatenate((all_pred, pred.reshape(-1, self.conf.height, self.conf.width)), axis=0)
+            all_var = np.concatenate((all_var, var_one.reshape(-1, self.conf.height, self.conf.width)), axis=0)
+            cls_uncertainty = np.concatenate((cls_uncertainty,
+                                              prob_variance.reshape(-1, self.conf.height, self.conf.width,
+                                                                    self.conf.num_cls)),
+                                             axis=0)
+            # else:
+                # self.visualize(all_inputs, all_mask, all_pred, all_var, cls_uncertainty, train_step=train_step,
+                #                mode='test')
+        uncertainty_measure = get_uncertainty_measure(all_inputs, all_mask, all_pred, all_var)
+
+                # break
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
+        print('****** IoU & ACC ******')
+        print('Uncertainty Quality Measure = {}'.format(uncertainty_measure))
+        print('Mean IoU = {0:.01%}'.format(mean_IOU))
+        for ii in range(self.conf.num_cls):
+            print('     - {0} class: IoU={1:.01%}, ACC={2:.01%}'.format(self.conf.label_name[ii], IOU[ii], ACC[ii]))
+        print('-' * 20)
 
-        print('- IOU: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
-              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}, mean_IoU={6:.01%}'
-              .format(IOU[0], IOU[1], IOU[2], IOU[3], IOU[4], IOU[5], mean_IOU))
-        print('- ACC: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
-              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}'
-              .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
-        print('-' * 60)
-
-    def visualize(self, x, y, y_pred, var=None, cls_uncertainty=None, train_step=None, img_idx=None,
-                     mode='valid'):  # all of shape (#images, 512, 512)
+    def visualize(self, x, y, y_pred, var=None, cls_uncertainty=None, train_step=None, mode='valid'):
+        # all of shape (#images, 512, 512)
         if mode == 'valid':
             dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
         elif mode == "test":
             dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step) + '_test')
 
         print('saving sample prediction images....... ')
-
+        cls_uncertainty = None
         if not self.conf.bayes or mode == 'valid':
             # run it either in validation mode or when non-bayesian network
             plot_save_preds_2d(x, y, y_pred, path=dest_path, label_names=np.array(self.conf.label_name))
         else:
             if cls_uncertainty is None:
-                plot_save_preds_2d(x, y, y_pred, var, path=dest_path + '/bayes',
+                plot_save_preds_2d(x, y, y_pred, var, path=dest_path,
                                    label_names=np.array(self.conf.label_name))
             else:
-                plot_save_preds_2d(x, y, y_pred, var, cls_uncertainty, path=dest_path + '/bayes',
+                plot_save_preds_2d(x, y, y_pred, var, cls_uncertainty, path=dest_path,
                                    label_names=np.array(self.conf.label_name))

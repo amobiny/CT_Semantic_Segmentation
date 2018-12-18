@@ -52,12 +52,14 @@ def vis_segmentation(image, seg_map_gt, seg_map_pred, var_map_pred=None, cls_unc
     """Visualizes input image, segmentation map and overlay view."""
     FULL_LABEL_MAP = np.arange(len(label_names)).reshape(len(label_names), 1)
     FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
+    num_cls = len(label_names)
+
     if cls_uncert is not None:
         plt.figure(figsize=(20, 8))
-        grid_spec = gridspec.GridSpec(2, 6)
+        grid_spec = gridspec.GridSpec(2, num_cls)
     else:
-        plt.figure(figsize=(20, 5))
-        grid_spec = gridspec.GridSpec(1, 5, width_ratios=[6, 6, 6, 6, 1])
+        plt.figure(figsize=(20, 6))
+        grid_spec = gridspec.GridSpec(1, 6, width_ratios=[6, 6, 6, 6, 6, 1])
 
     # plot input image
     ii = 0
@@ -145,7 +147,7 @@ def plot_save_preds_2d(images, masks, mask_preds, var_preds=None, cls_unc=None, 
         if cls_unc is None:
             for slice_num, image, mask, mask_pred, var_pred in zip(slice_numbers, images, masks, mask_preds, var_preds):
                 img_name = os.path.join(path, str(slice_num) + '.png')
-                vis_segmentation(image, mask, mask_pred, var_pred, label_names, img_name)
+                vis_segmentation(image, mask, mask_pred, var_pred, label_names=label_names, image_name=img_name)
         else:
             for slice_num, image, mask, mask_pred, var_pred, cls_un in zip(slice_numbers, images, masks, mask_preds, var_preds, cls_unc):
                 img_name = os.path.join(path, str(slice_num) + '.png')
