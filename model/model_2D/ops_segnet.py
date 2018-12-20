@@ -43,10 +43,10 @@ def conv_layer(bottom, name, shape, is_training, use_vgg=False, vgg_param_dict=N
     with tf.variable_scope(name) as scope:
         if use_vgg:
             init = tf.constant_initializer(get_conv_filter(scope.name))
-            filt = variable_with_weight_decay('weights', initializer=init, shape=shape, wd=False)
+            filt = variable_with_weight_decay('weights', initializer=init, shape=shape, wd=True)
         else:
             filt = variable_with_weight_decay('weights', initializer=initialization(shape[0], shape[2]),
-                                              shape=shape, wd=False)
+                                              shape=shape, wd=True)
         tf.summary.histogram(scope.name + "weight", filt)
         conv = tf.nn.conv2d(bottom, filt, [1, 1, 1, 1], padding='SAME')
         if use_vgg:

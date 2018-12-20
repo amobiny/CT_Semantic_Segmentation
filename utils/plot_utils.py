@@ -64,7 +64,7 @@ def vis_segmentation(image, seg_map_gt, seg_map_pred, var_map_pred=None, cls_unc
     # plot input image
     ii = 0
     plt.subplot(grid_spec[ii])
-    plt.imshow(image, cmap='gray')
+    plt.imshow(np.squeeze(image), cmap='gray')
     plt.axis('off')
     plt.title('input image')
 
@@ -85,7 +85,7 @@ def vis_segmentation(image, seg_map_gt, seg_map_pred, var_map_pred=None, cls_unc
 
     ii += 1
     plt.subplot(grid_spec[ii])
-    plt.imshow(image, cmap='gray')
+    plt.imshow(np.squeeze(image), cmap='gray')
     plt.imshow(seg_image, alpha=0.4)
     plt.axis('off')
     plt.title('prediction overlay')

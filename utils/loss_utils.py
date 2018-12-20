@@ -1,4 +1,6 @@
 import tensorflow as tf
+
+
 # import tensorlayer as tl
 
 
@@ -39,27 +41,30 @@ def pixel_wise_softmax(output_map):
     return tf.div(exponential_map, tensor_sum_exp)
 
 
-def weighted_cross_entropy(y, logits, n_class):
+def weighted_cross_entropy(y, logits, n_class, data):
     flat_logits = tf.reshape(logits, [-1, n_class])
     flat_labels = tf.reshape(y, [-1, n_class])
     # your class weights
-    # class_weights = tf.constant([[1.0, 2.0, 10.0, 10.0, 2.0, 10.0]])
-    # class_weights = tf.constant([[0.5, 1.0, 4.0, 1.0, 1.0, 5.0]])
-    class_weights = tf.constant([0.2595, 0.1826, 4.5640, 0.1417, 0.9051, 0.3826,
-                                 9.6446, 1.8418, 0.6823, 6.2478, 7.3614, 1.0974])
-    # deduce weights for batch samples based on their true label
-    weights = tf.reduce_sum(class_weights * flat_labels, axis=1)
-    # compute your (unweighted) softmax cross entropy loss
-    try:
-        unweighted_losses = tf.nn.softmax_cross_entropy_with_logits_v2(labels=flat_labels, logits=flat_logits)
-    except:
-        unweighted_losses = tf.nn.softmax_cross_entropy_with_logits(labels=flat_labels, logits=flat_logits)
-
-    # apply the weights, relying on broadcasting of the multiplication
-    weighted_losses = unweighted_losses * weights
-    # reduce the result to get your final loss
+    if data == 'ct':
+        class_weights = tf.constant([[0.5, 1.0, 4.0, 1.0, 1.0, 5.0]])
+    elif data == 'camvid':
+        class_weights = tf.constant([0.2595, 0.1826, 4.5640, 0.1417, 0.9051, 0.3826,
+                                     9.6446, 1.8418, 0.6823, 6.2478, 7.3614, 1.0974])
+    else:
+        class_weights = tf.constant([tf.ones(shape=[n_class])])
+    
+    weighted_losses = tf.nn.weighted_cross_entropy_with_logits(targets=flat_labels, logits=flat_logits,
+                                                               pos_weight=class_weights)
+    # # deduce weights for batch samples based on their true label
+    # weights = tf.reduce_sum(class_weights * flat_labels, axis=1)
+    # # compute your (unweighted) softmax cross entropy loss
+    # try:
+    #     unweighted_losses = tf.nn.softmax_cross_entropy_with_logits_v2(labels=flat_labels, logits=flat_logits)
+    # except:
+    #     unweighted_losses = tf.nn.softmax_cross_entropy_with_logits(labels=flat_labels, logits=flat_logits)
+    #
+    # # apply the weights, relying on broadcasting of the multiplication
+    # weighted_losses = unweighted_losses * weights
+    # # reduce the result to get your final loss
     loss = tf.reduce_mean(weighted_losses)
     return loss
-
-
-

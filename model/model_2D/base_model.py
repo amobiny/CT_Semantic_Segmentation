@@ -29,7 +29,7 @@ class BaseModel(object):
             self.y_prob = tf.nn.softmax(self.logits, axis=-1)
             y_one_hot = tf.one_hot(self.labels_pl, depth=self.conf.num_cls, axis=3, name='y_one_hot')
             if self.conf.weighted_loss:
-                loss = weighted_cross_entropy(y_one_hot, self.logits, self.conf.num_cls)
+                loss = weighted_cross_entropy(y_one_hot, self.logits, self.conf.num_cls, data=self.conf.data)
             else:
                 if self.conf.loss_type == 'cross-entropy':
                     with tf.name_scope('cross_entropy'):
@@ -223,7 +223,7 @@ class BaseModel(object):
                 self.best_validation_loss = loss
                 print('>>>>>>>> model validation loss improved; saving the model......')
                 self.save(train_step)
-            elif mean_IOU < self.best_mean_IOU:
+            elif mean_IOU > self.best_mean_IOU:
                 self.best_mean_IOU = mean_IOU
                 print('>>>>>>>> model mean IOU improved; saving the model......')
                 self.save(train_step)
@@ -284,8 +284,17 @@ class BaseModel(object):
                                                                     self.conf.num_cls)),
                                              axis=0)
             # else:
-                # self.visualize(all_inputs, all_mask, all_pred, all_var, cls_uncertainty, train_step=train_step,
-                #                mode='test')
+        self.visualize(all_inputs, all_mask, all_pred, all_var, cls_uncertainty, train_step=train_step,
+                       mode='test')
+        import h5py
+        h5f = h5py.File(self.conf.run_name + '_bayes.h5', 'w')
+        h5f.create_dataset('x', data=all_inputs)
+        h5f.create_dataset('y', data=all_mask)
+        h5f.create_dataset('y_pred', data=all_pred)
+        h5f.create_dataset('y_var', data=all_var)
+        h5f.create_dataset('cls_uncertainty', data=cls_uncertainty)
+        h5f.close()
+
         uncertainty_measure = get_uncertainty_measure(all_inputs, all_mask, all_pred, all_var)
 
                 # break

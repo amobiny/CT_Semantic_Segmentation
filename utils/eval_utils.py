@@ -71,10 +71,9 @@ def var_calculate_3d(pred, prob_variance):
     return var_one
 
 
-def get_uncertainty_measure(x, y, y_pred, y_var):
+def get_uncertainty_measure(y, y_pred, y_var):
     """
     computes the uncertainty measure
-    :param x: input images of shape [#images, height, width, channels]
     :param y:input label of shape [#images, height, width]
     :param y_pred: predicted masks of shape [#images, height, width]
     :param y_var: uncertainty maps of shape [#images, height, width]
