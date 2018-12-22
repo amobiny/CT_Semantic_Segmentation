@@ -52,7 +52,7 @@ def weighted_cross_entropy(y, logits, n_class, data):
                                      9.6446, 1.8418, 0.6823, 6.2478, 7.3614, 1.0974])
     else:
         class_weights = tf.constant([tf.ones(shape=[n_class])])
-    
+
     weighted_losses = tf.nn.weighted_cross_entropy_with_logits(targets=flat_labels, logits=flat_logits,
                                                                pos_weight=class_weights)
     # # deduce weights for batch samples based on their true label

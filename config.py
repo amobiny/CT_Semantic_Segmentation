@@ -2,7 +2,7 @@ import tensorflow as tf
 
 flags = tf.app.flags
 flags.DEFINE_string('mode', 'train', 'train or test')
-flags.DEFINE_boolean('bayes', True, 'Whether to use Bayesian network or not')
+flags.DEFINE_boolean('bayes', False, 'Whether to use Bayesian network or not')
 flags.DEFINE_integer('monte_carlo_simulations', 50, 'The number of monte carlo simulation runs')
 flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
 
@@ -18,8 +18,8 @@ flags.DEFINE_boolean('weighted_loss', True, 'Whether to use weighted cross-entro
 flags.DEFINE_string('loss_type', 'cross-entropy', 'cross-entropy or dice')
 flags.DEFINE_boolean('use_reg', False, 'Use L2 regularization on weights')
 flags.DEFINE_float('lmbda', 1e-4, 'L2 regularization coefficient')
-flags.DEFINE_integer('batch_size', 2, 'training batch size')
-flags.DEFINE_integer('val_batch_size', 2, 'training batch size')
+flags.DEFINE_integer('batch_size', 3, 'training batch size')
+flags.DEFINE_integer('val_batch_size', 3, 'training batch size')
 
 # data
 flags.DEFINE_string('data', 'camvid', 'Training data name; ct or camvid')   ################
@@ -31,9 +31,9 @@ flags.DEFINE_boolean('random_crop', True, 'Crops the input and output randomly d
 flags.DEFINE_list('crop_size', [256, 256, 32], 'crop sizes')
 flags.DEFINE_boolean('data_augment', False, 'Adds augmentation to data')
 flags.DEFINE_integer('max_angle', 40, 'Maximum rotation angle along each axis; when applying augmentation')
-flags.DEFINE_integer('height', 512, 'Original image (and Network if random_crop is off) height size')   ######
-flags.DEFINE_integer('width', 512, 'Original image (and Network if random_crop is off) width size')     ######
-flags.DEFINE_integer('channel', 1, 'Original image channel size')                                       ######
+flags.DEFINE_integer('height', 360, 'Original image (and Network if random_crop is off) height size')   ######
+flags.DEFINE_integer('width', 480, 'Original image (and Network if random_crop is off) width size')     ######
+flags.DEFINE_integer('channel', 3, 'Original image channel size')                                       ######
 flags.DEFINE_integer('depth', 32, 'Network depth size during training (if random_crop is off)')
 flags.DEFINE_integer('Dcut_size', 32, 'Depth of the validation slices')
 
@@ -45,10 +45,10 @@ flags.DEFINE_string('imagedir', './Results/image_dir_bayes/', 'Directory to save
 flags.DEFINE_string('model_name', 'model', 'Model file name')
 
 # network architecture
-flags.DEFINE_integer('num_cls', 6, 'Number of output classes')      ########
-flags.DEFINE_list('label_name', ['background', 'liver', 'spleen', 'kidney', 'bone', 'vessel'], 'class names')   #####
-# flags.DEFINE_list('label_name', ['sky', 'building', 'pole', 'road', 'pavement', 'tree', 'signsymbol'
-#                                  , 'fence', 'car', 'pedestrian', 'bicyclist', 'unlabeled'], 'class names')
+flags.DEFINE_integer('num_cls', 12, 'Number of output classes')      ########
+# flags.DEFINE_list('label_name', ['background', 'liver', 'spleen', 'kidney', 'bone', 'vessel'], 'class names')   #####
+flags.DEFINE_list('label_name', ['sky', 'building', 'pole', 'road', 'pavement', 'tree', 'signsymbol'
+                                 , 'fence', 'car', 'pedestrian', 'bicyclist', 'unlabeled'], 'class names')
 flags.DEFINE_boolean('use_BN', True, 'Adds Batch-Normalization to all convolutional layers')
 flags.DEFINE_integer('start_channel_num', 16, 'start number of outputs for the first conv layer')
 flags.DEFINE_integer('filter_size', 3, 'Filter size for the conv and deconv layers')
@@ -59,5 +59,13 @@ flags.DEFINE_float('keep_prob', 0.5, 'Probability of keeping a unit in drop-out'
 flags.DEFINE_float('theta_down', 0.3, 'transition down layers factor')
 flags.DEFINE_float('theta_up', 0.3, 'transition up layers factor')
 flags.DEFINE_integer('growth_rate', 32, 'Growth rate of the DenseNet')
+
+# camvid
+flags.DEFINE_string('img_prefix', '.', '')
+flags.DEFINE_string('label_prefix', '.', '')
+
+flags.DEFINE_string('train_file', 'SegNet/CamVid/train.txt', 'path to train text file')
+flags.DEFINE_string('val_file', 'SegNet/CamVid/val.txt', 'path to validation text file')
+flags.DEFINE_string('test_file', 'SegNet/CamVid/test.txt', 'path to test text file')
 
 args = tf.app.flags.FLAGS
