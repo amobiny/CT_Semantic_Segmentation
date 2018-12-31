@@ -327,3 +327,5 @@ class BaseModel(object):
             else:
                 plot_save_preds_2d(x, y, y_pred, var, cls_uncertainty, path=dest_path,
                                    label_names=np.array(self.conf.label_name))
+        print('Images saved in {}'.format(dest_path))
+        print('-' * 20)
