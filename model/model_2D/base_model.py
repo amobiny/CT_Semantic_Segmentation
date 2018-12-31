@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tqdm import tqdm
-
 from creat_TFRecord import parser
 from utils.data_utils import get_filename_list, dataset_inputs
 from utils.plot_utils import plot_save_preds_2d
@@ -18,24 +17,14 @@ class BaseModel(object):
         self.input_shape = [None, self.conf.height, self.conf.width, self.conf.channel]
         self.output_shape = [None, self.conf.height, self.conf.width]
         self.create_placeholders()
-        self.create_data_pipeline()
 
     def create_placeholders(self):
         with tf.name_scope('Input'):
-            # self.inputs_pl = tf.placeholder(tf.float32, self.input_shape, name='input')
-            # self.labels_pl = tf.placeholder(tf.int64, self.output_shape, name='annotation')
+            self.inputs_pl = tf.placeholder(tf.float32, self.input_shape, name='input')
+            self.labels_pl = tf.placeholder(tf.int64, self.output_shape, name='annotation')
             self.is_training_pl = tf.placeholder(tf.bool, name="is_training")
             self.with_dropout_pl = tf.placeholder(tf.bool, name="with_dropout")
             self.keep_prob_pl = tf.placeholder(tf.float32)
-
-    def create_data_pipeline(self):
-        dataset = tf.data.TFRecordDataset('train.tfrecords')
-        dataset = dataset.map(parser, num_parallel_calls=self.conf.batch_size)
-        dataset = dataset.shuffle(buffer_size=100)
-        dataset = dataset.batch(self.conf.batch_size)
-        dataset = dataset.prefetch(1)
-        iterator = dataset.make_initializable_iterator()
-        self.x, self.y = iterator.get_next()
 
     def loss_func(self):
         with tf.name_scope('Loss'):
@@ -158,38 +147,6 @@ class BaseModel(object):
                 print('-' * 25 + 'Validation' + '-' * 25)
                 self.normal_evaluate(dataset='valid', train_step=train_step)
 
-    def train_new(self):
-        self.sess.run(tf.local_variables_initializer())
-        self.best_validation_loss = 1000
-        self.best_mean_IOU = 0
-        if self.conf.reload_step > 0:
-            self.reload(self.conf.reload_step)
-            print('----> Continue Training from step #{}'.format(self.conf.reload_step))
-        else:
-            print('----> Start Training')
-
-        for train_step in range(self.conf.reload_step, self.conf.reload_step + self.conf.max_step + 1):
-            image_batch, label_batch = self.sess.run([self.images_tr, self.labels_tr])
-            feed_dict = {self.inputs_pl: image_batch,
-                         self.labels_pl: label_batch,
-                         self.is_training_pl: True,
-                         self.keep_prob_pl: self.conf.keep_prob,
-                         self.with_dropout_pl: True}
-            if train_step % self.conf.SUMMARY_FREQ == 0:
-                _, _, _, summary = self.sess.run([self.train_op,
-                                                  self.mean_loss_op,
-                                                  self.mean_accuracy_op,
-                                                  self.merged_summary],
-                                                 feed_dict=feed_dict)
-                loss, acc = self.sess.run([self.mean_loss, self.mean_accuracy])
-                print('step: {0:<6}, train_loss= {1:.4f}, train_acc={2:.01%}'.format(train_step, loss, acc))
-                self.save_summary(summary, train_step, is_train=True)
-            else:
-                self.sess.run([self.train_op, self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
-            if train_step % self.conf.VAL_FREQ == 0:
-                print('-' * 25 + 'Validation' + '-' * 25)
-                self.normal_evaluate(dataset='valid', train_step=train_step)
-
     def test(self, step_num):
         self.sess.run(tf.local_variables_initializer())
 
@@ -256,11 +213,9 @@ class BaseModel(object):
                 plot_mask_pred = np.concatenate(
                     (plot_mask_pred, mask_pred[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
 
-        self.visualize(plot_inputs, plot_mask, plot_mask_pred, train_step=train_step, mode='valid')
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
         loss, acc = self.sess.run([self.mean_loss, self.mean_accuracy])
-
         if dataset == "valid":  # save the summaries and improved model in validation mode
             summary_valid = self.sess.run(self.merged_summary, feed_dict=feed_dict)
             self.save_summary(summary_valid, train_step, is_train=False)
@@ -278,6 +233,7 @@ class BaseModel(object):
         for ii in range(self.conf.num_cls):
             print('     - {0:<15}: IoU={1:<5.01%}, ACC={2:<5.01%}'.format(self.conf.label_name[ii], IOU[ii], ACC[ii]))
         print('-' * 20)
+        self.visualize(plot_inputs, plot_mask, plot_mask_pred, train_step=train_step, mode='valid')
 
     def MC_evaluate(self, dataset='valid', train_step=None):
         num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
@@ -371,4 +327,3 @@ class BaseModel(object):
             else:
                 plot_save_preds_2d(x, y, y_pred, var, cls_uncertainty, path=dest_path,
                                    label_names=np.array(self.conf.label_name))
-

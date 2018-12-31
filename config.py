@@ -5,6 +5,7 @@ flags.DEFINE_string('mode', 'train', 'train or test')
 flags.DEFINE_boolean('bayes', False, 'Whether to use Bayesian network or not')
 flags.DEFINE_integer('monte_carlo_simulations', 50, 'The number of monte carlo simulation runs')
 flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
+flags.DEFINE_boolean('read_tfrecord', True, 'Whether to read the tfrecord files or directly from dataloader')
 
 # Training logs
 flags.DEFINE_integer('max_step', 300000, '# of step for training')
@@ -18,8 +19,8 @@ flags.DEFINE_boolean('weighted_loss', True, 'Whether to use weighted cross-entro
 flags.DEFINE_string('loss_type', 'cross-entropy', 'cross-entropy or dice')
 flags.DEFINE_boolean('use_reg', False, 'Use L2 regularization on weights')
 flags.DEFINE_float('lmbda', 1e-4, 'L2 regularization coefficient')
-flags.DEFINE_integer('batch_size', 3, 'training batch size')
-flags.DEFINE_integer('val_batch_size', 3, 'training batch size')
+flags.DEFINE_integer('batch_size', 1, 'training batch size')
+flags.DEFINE_integer('val_batch_size', 1, 'training batch size')
 
 # data
 flags.DEFINE_string('data', 'camvid', 'Training data name; ct or camvid')   ################
@@ -41,7 +42,7 @@ flags.DEFINE_integer('Dcut_size', 32, 'Depth of the validation slices')
 flags.DEFINE_string('run_name', 'run_camvid', 'Run name')         ############
 flags.DEFINE_string('logdir', './Results/log_dir/', 'Logs directory')
 flags.DEFINE_string('modeldir', './Results/model_dir/', 'Model directory')
-flags.DEFINE_string('imagedir', './Results/image_dir_bayes/', 'Directory to save sample predictions')
+flags.DEFINE_string('imagedir', './Results/image_dir/', 'Directory to save sample predictions')
 flags.DEFINE_string('model_name', 'model', 'Model file name')
 
 # network architecture

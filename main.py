@@ -3,6 +3,7 @@ from config import args
 import os
 from utils.other_utils import write_spec
 
+
 if args.dim == 2:
     # from model.model_2D.VNet import VNet as Model
     # from model.model_2D.Tiramisu import Tiramisu as Model
@@ -25,7 +26,7 @@ def main(_):
             os.makedirs(args.logdir+args.run_name)
         if args.mode == 'train':
             write_spec(args)
-            model.train_new()
+            model.train()
         elif args.mode == 'test':
             model.test(step_num=args.reload_step)
 

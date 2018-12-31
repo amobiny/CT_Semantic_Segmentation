@@ -1,5 +1,9 @@
 import tensorflow as tf
-from model.model_2D.base_model import BaseModel
+from config import args
+if args.read_tfrecord:
+    from model.model_2D.base_model_tfrecord import BaseModel
+else:
+    from model.model_2D.base_model import BaseModel
 from model.model_2D.ops_segnet import initialization, variable_with_weight_decay, conv_layer, up_sampling, max_pool
 import numpy as np
 
@@ -18,7 +22,7 @@ class SegNet(BaseModel):
 
     def build_network(self):
         # Building network...
-        self.norm1 = tf.nn.lrn(self.x, depth_radius=5, bias=1.0, alpha=0.0001, beta=0.75, name='norm1')
+        self.norm1 = tf.nn.lrn(self.inputs_pl, depth_radius=5, bias=1.0, alpha=0.0001, beta=0.75, name='norm1')
         # first box of convolution layer,each part we do convolution two times, so we have conv1_1, and conv1_2
         self.conv1_1 = conv_layer(self.norm1, "conv1_1", [3, 3, 3, 64], self.is_training_pl, self.use_vgg,
                                   self.vgg_param_dict)
