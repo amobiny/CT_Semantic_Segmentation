@@ -7,13 +7,16 @@ flags.DEFINE_integer('monte_carlo_simulations', 50, 'The number of monte carlo s
 flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
 
 # TFRecords
-flags.DEFINE_boolean('read_tfrecord', True, 'Whether to read the tfrecord files or directly from dataloader')
+flags.DEFINE_boolean('read_tfrecord', False, 'Whether to read the tfrecord files or directly from dataloader')
 flags.DEFINE_string('train_tfrecords', './data_preparation/CamVid/train.tfrecords', 'Training tfrecords data')
 flags.DEFINE_string('path_to_input_images_train', './data_preparation/CamVid/train/*.png', 'path to train input images')
 flags.DEFINE_string('path_to_output_labels_train', './data_preparation/CamVid/trainannot/*.png', 'path to train output labels')
 flags.DEFINE_string('valid_tfrecords', './data_preparation/CamVid/valid.tfrecords', 'Validation tfrecords data ')
 flags.DEFINE_string('path_to_input_images_val', './data_preparation/CamVid/val/*.png', 'path to val input images')
 flags.DEFINE_string('path_to_output_labels_val', './data_preparation/CamVid/valannot/*.png', 'path to val output labels')
+flags.DEFINE_string('test_tfrecords', './data_preparation/CamVid/test.tfrecords', 'Test tfrecords data ')
+flags.DEFINE_string('path_to_input_images_test', './data_preparation/CamVid/test/*.png', 'path to test input images')
+flags.DEFINE_string('path_to_output_labels_test', './data_preparation/CamVid/testannot/*.png', 'path to test output labels')
 
 # Training logs
 flags.DEFINE_integer('max_step', 300000, '# of step for training')
@@ -47,7 +50,7 @@ flags.DEFINE_integer('depth', 32, 'Network depth size during training (if random
 flags.DEFINE_integer('Dcut_size', 32, 'Depth of the validation slices')
 
 # Directories
-flags.DEFINE_string('run_name', 'camvid_segnet_dropconnect', 'Run name')         ############
+flags.DEFINE_string('run_name', 'camvid_dropconnect', 'Run name')         ############
 flags.DEFINE_string('logdir', './Results/log_dir/', 'Logs directory')
 flags.DEFINE_string('modeldir', './Results/model_dir/', 'Model directory')
 flags.DEFINE_string('imagedir', './Results/image_dir/', 'Directory to save sample predictions')

@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tqdm import tqdm
-from creat_TFRecord import parser
 from utils.data_utils import get_filename_list, dataset_inputs
 from utils.plot_utils import plot_save_preds_2d
 from utils.loss_utils import cross_entropy, dice_coeff, weighted_cross_entropy
@@ -204,14 +203,14 @@ class BaseModel(object):
             self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
             mask_pred = self.sess.run(self.y_pred, feed_dict=feed_dict)
             hist += get_hist(mask_pred.flatten(), data_y.flatten(), num_cls=self.conf.num_cls)
-            if plot_inputs.shape[0] < 100 and np.random.randint(2):  # randomly select a few slices to plot and save
-                idx = np.random.randint(self.conf.batch_size)
-                plot_inputs = np.concatenate((plot_inputs, data_x[idx].reshape(1, self.conf.height, self.conf.width,
-                                                                               self.conf.channel)), axis=0)
-                plot_mask = np.concatenate((plot_mask, data_y[idx].reshape(1, self.conf.height, self.conf.width)),
+            if plot_inputs.shape[0] < 100:  # randomly select a few slices to plot and save
+                # idx = np.random.randint(self.conf.batch_size)
+                plot_inputs = np.concatenate((plot_inputs, data_x.reshape(-1, self.conf.height, self.conf.width,
+                                                                          self.conf.channel)), axis=0)
+                plot_mask = np.concatenate((plot_mask, data_y.reshape(-1, self.conf.height, self.conf.width)),
                                            axis=0)
                 plot_mask_pred = np.concatenate(
-                    (plot_mask_pred, mask_pred[idx].reshape(1, self.conf.height, self.conf.width)), axis=0)
+                    (plot_mask_pred, mask_pred.reshape(-1, self.conf.height, self.conf.width)), axis=0)
 
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
@@ -221,7 +220,11 @@ class BaseModel(object):
             self.save_summary(summary_valid, train_step, is_train=False)
             if loss < self.best_validation_loss:
                 self.best_validation_loss = loss
-                print('>>>>>>>> model validation loss improved; saving the model......')
+                if mean_IOU > self.best_mean_IOU:
+                    self.best_mean_IOU = mean_IOU
+                    print('>>>>>>>> Both model validation loss and mean IOU improved; saving the model......')
+                else:
+                    print('>>>>>>>> model validation loss improved; saving the model......')
                 self.save(train_step)
             elif mean_IOU > self.best_mean_IOU:
                 self.best_mean_IOU = mean_IOU
@@ -229,7 +232,7 @@ class BaseModel(object):
                 self.save(train_step)
 
         print('****** IoU & ACC ******')
-        print('Mean IoU = {0:.01%}'.format(mean_IOU))
+        print('Mean IoU = {0:.01%}, valid_loss = {1:.4f}'.format(mean_IOU, loss))
         for ii in range(self.conf.num_cls):
             print('     - {0:<15}: IoU={1:<5.01%}, ACC={2:<5.01%}'.format(self.conf.label_name[ii], IOU[ii], ACC[ii]))
         print('-' * 20)

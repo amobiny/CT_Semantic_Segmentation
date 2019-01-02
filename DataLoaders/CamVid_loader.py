@@ -26,6 +26,8 @@ class DataLoader(object):
             x = h5f['x'][list(img_idx)]
             y = h5f['y'][list(img_idx)]
             h5f.close()
+            if self.augment:
+                x, y = augmentation(x, y)
         elif mode == 'valid':
             h5f = h5py.File(self.valid_file, 'r')
             x = h5f['x'][start:end]
@@ -51,3 +53,16 @@ class DataLoader(object):
             h5f = h5py.File(self.test_file, 'r')
             num_ = h5f['y'][:].shape[0]
         return num_
+
+
+def augmentation(img_batch, mask_batch):
+    img_batch_aug, mask_batch_aug = img_batch, mask_batch
+    for i in range(img_batch.shape[0]):
+        axis_aug = np.random.randint(2)
+        image, mask = img_batch[i], mask_batch[i]
+        if axis_aug:
+            image = np.fliplr(image)
+            mask = np.fliplr(mask)
+        img_batch_aug[i] = image
+        mask_batch_aug[i] = mask
+    return img_batch_aug, mask_batch
