@@ -16,7 +16,7 @@ class DataLoader(object):
         self.project_path = '/home/cougarnet.uh.edu/amobiny/Desktop/CT_Semantic_Segmentation'
         self.train_file = self.project_path + '/data_preparation/CamVid/train.h5'
         self.valid_file = self.project_path + '/data_preparation/CamVid/valid.h5'
-        self.test_file = self.project_path + '/data_preparation/CamVid/test.h5'
+        self.test_file = self.project_path + '/data_preparation/CamVid/valid.h5'
         self.num_train = self.count_num_samples(mode='train')   # list of number of samples in each train file
 
     def next_batch(self, start=None, end=None, mode='train'):

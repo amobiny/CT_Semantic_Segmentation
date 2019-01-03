@@ -3,7 +3,7 @@ from tqdm import tqdm
 from utils.data_utils import get_filename_list, dataset_inputs
 from utils.plot_utils import plot_save_preds_2d
 from utils.loss_utils import cross_entropy, dice_coeff, weighted_cross_entropy
-from utils.eval_utils import get_hist, compute_iou, var_calculate_2d, get_uncertainty_measure
+from utils.eval_utils import get_hist, compute_iou, var_calculate_2d, get_uncertainty_precision
 import os
 import numpy as np
 
@@ -107,8 +107,8 @@ class BaseModel(object):
 
     def train(self):
         self.sess.run(tf.local_variables_initializer())
-        self.best_validation_loss = 1000
-        self.best_mean_IOU = 0
+        self.best_validation_loss = 0.0928
+        self.best_mean_IOU = 0.56
         if self.conf.reload_step > 0:
             self.reload(self.conf.reload_step)
             print('----> Continue Training from step #{}'.format(self.conf.reload_step))
@@ -239,73 +239,76 @@ class BaseModel(object):
         self.visualize(plot_inputs, plot_mask, plot_mask_pred, train_step=train_step, mode='valid')
 
     def MC_evaluate(self, dataset='valid', train_step=None):
-        num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
-        hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
-        self.sess.run(tf.local_variables_initializer())
-        all_inputs = np.zeros((0, self.conf.height, self.conf.width, self.conf.channel))
-        all_mask = np.zeros((0, self.conf.height, self.conf.width))
-        all_pred = np.zeros((0, self.conf.height, self.conf.width))
-        all_var = np.zeros((0, self.conf.height, self.conf.width))
-        cls_uncertainty = np.zeros((0, self.conf.height, self.conf.width, self.conf.num_cls))
-        for step in tqdm(range(num_batch)):
-            start = self.conf.val_batch_size * step
-            end = self.conf.val_batch_size * (step + 1)
-            data_x, data_y = self.data_reader.next_batch(start=start, end=end, mode=dataset)
-            mask_pred_mc = [np.zeros((self.conf.val_batch_size, self.conf.height, self.conf.width))
-                            for _ in range(self.conf.monte_carlo_simulations)]
-            mask_prob_mc = [np.zeros((self.conf.val_batch_size, self.conf.height, self.conf.width, self.conf.num_cls))
-                            for _ in range(self.conf.monte_carlo_simulations)]
-            feed_dict = {self.inputs_pl: data_x,
-                         self.labels_pl: data_y,
-                         self.is_training_pl: True,
-                         self.with_dropout_pl: True,
-                         self.keep_prob_pl: self.conf.keep_prob}
-            for mc_iter in range(self.conf.monte_carlo_simulations):
-                inputs, mask, mask_prob, mask_pred = self.sess.run([self.inputs_pl,
-                                                                    self.labels_pl,
-                                                                    self.y_prob,
-                                                                    self.y_pred], feed_dict=feed_dict)
-                mask_prob_mc[mc_iter] = mask_prob
-                mask_pred_mc[mc_iter] = mask_pred
-
-            prob_mean = np.nanmean(mask_prob_mc, axis=0)
-            prob_variance = np.var(mask_prob_mc, axis=0)
-            pred = np.argmax(prob_mean, axis=-1)
-            var_one = np.nanmean(prob_variance, axis=-1)
-            # var_one = var_calculate_2d(pred, prob_variance)
-            hist += get_hist(pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
-
-            # if all_inputs.shape[0] < 6:
-            # ii = np.random.randint(self.conf.val_batch_size)
-            # ii = 1
-            all_inputs = np.concatenate((all_inputs, inputs.reshape(-1, self.conf.height, self.conf.width,
-                                                                    self.conf.channel)), axis=0)
-            all_mask = np.concatenate((all_mask, mask.reshape(-1, self.conf.height, self.conf.width)), axis=0)
-            all_pred = np.concatenate((all_pred, pred.reshape(-1, self.conf.height, self.conf.width)), axis=0)
-            all_var = np.concatenate((all_var, var_one.reshape(-1, self.conf.height, self.conf.width)), axis=0)
-            cls_uncertainty = np.concatenate((cls_uncertainty,
-                                              prob_variance.reshape(-1, self.conf.height, self.conf.width,
-                                                                    self.conf.num_cls)),
-                                             axis=0)
-            # else:
-        self.visualize(all_inputs, all_mask, all_pred, all_var, cls_uncertainty, train_step=train_step,
-                       mode='test')
+        # num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
+        # hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
+        # self.sess.run(tf.local_variables_initializer())
+        # all_inputs = np.zeros((0, self.conf.height, self.conf.width, self.conf.channel))
+        # all_mask = np.zeros((0, self.conf.height, self.conf.width))
+        # all_pred = np.zeros((0, self.conf.height, self.conf.width))
+        # all_var = np.zeros((0, self.conf.height, self.conf.width))
+        # cls_uncertainty = np.zeros((0, self.conf.height, self.conf.width, self.conf.num_cls))
+        # for step in tqdm(range(num_batch)):
+        #     start = self.conf.val_batch_size * step
+        #     end = self.conf.val_batch_size * (step + 1)
+        #     data_x, data_y = self.data_reader.next_batch(start=start, end=end, mode=dataset)
+        #     mask_pred_mc = [np.zeros((self.conf.val_batch_size, self.conf.height, self.conf.width))
+        #                     for _ in range(self.conf.monte_carlo_simulations)]
+        #     mask_prob_mc = [np.zeros((self.conf.val_batch_size, self.conf.height, self.conf.width, self.conf.num_cls))
+        #                     for _ in range(self.conf.monte_carlo_simulations)]
+        #     feed_dict = {self.inputs_pl: data_x,
+        #                  self.labels_pl: data_y,
+        #                  self.is_training_pl: True,
+        #                  self.with_dropout_pl: True,
+        #                  self.keep_prob_pl: self.conf.keep_prob}
+        #     for mc_iter in range(self.conf.monte_carlo_simulations):
+        #         inputs, mask, mask_prob, mask_pred = self.sess.run([self.inputs_pl,
+        #                                                             self.labels_pl,
+        #                                                             self.y_prob,
+        #                                                             self.y_pred], feed_dict=feed_dict)
+        #         mask_prob_mc[mc_iter] = mask_prob
+        #         mask_pred_mc[mc_iter] = mask_pred
+        #
+        #     prob_mean = np.nanmean(mask_prob_mc, axis=0)
+        #     prob_variance = np.var(mask_prob_mc, axis=0)
+        #     pred = np.argmax(prob_mean, axis=-1)
+        #     var_one = np.nanmean(prob_variance, axis=-1)
+        #     # var_one = var_calculate_2d(pred, prob_variance)
+        #     hist += get_hist(pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
+        #
+        #     # if all_inputs.shape[0] < 6:
+        #     # ii = np.random.randint(self.conf.val_batch_size)
+        #     # ii = 1
+        #     all_inputs = np.concatenate((all_inputs, inputs.reshape(-1, self.conf.height, self.conf.width,
+        #                                                             self.conf.channel)), axis=0)
+        #     all_mask = np.concatenate((all_mask, mask.reshape(-1, self.conf.height, self.conf.width)), axis=0)
+        #     all_pred = np.concatenate((all_pred, pred.reshape(-1, self.conf.height, self.conf.width)), axis=0)
+        #     all_var = np.concatenate((all_var, var_one.reshape(-1, self.conf.height, self.conf.width)), axis=0)
+        #     cls_uncertainty = np.concatenate((cls_uncertainty,
+        #                                       prob_variance.reshape(-1, self.conf.height, self.conf.width,
+        #                                                             self.conf.num_cls)),
+        #                                      axis=0)
+        #     # else:
+        # self.visualize(all_inputs, all_mask, all_pred, all_var, cls_uncertainty, train_step=train_step,
+        #                mode='test')
         import h5py
-        h5f = h5py.File(self.conf.run_name + '_bayes.h5', 'w')
-        h5f.create_dataset('x', data=all_inputs)
-        h5f.create_dataset('y', data=all_mask)
-        h5f.create_dataset('y_pred', data=all_pred)
-        h5f.create_dataset('y_var', data=all_var)
-        h5f.create_dataset('cls_uncertainty', data=cls_uncertainty)
+        h5f = h5py.File(self.conf.run_name + '_bayes.h5', 'r')
+        # h5f.create_dataset('x', data=all_inputs)
+        # h5f.create_dataset('y', data=all_mask)
+        # h5f.create_dataset('y_pred', data=all_pred)
+        # h5f.create_dataset('y_var', data=all_var)
+        # h5f.create_dataset('cls_uncertainty', data=cls_uncertainty)
+        # h5f.close()
+
+        all_mask = h5f['y'][:]
+        all_pred = h5f['y_pred'][:]
+        all_var = h5f['y_var'][:]
         h5f.close()
-
-        uncertainty_measure = get_uncertainty_measure(all_inputs, all_mask, all_pred, all_var)
-
+        uncertainty_measure = get_uncertainty_precision(all_mask, all_pred, all_var)
+        print('Uncertainty Quality Measure = {}'.format(uncertainty_measure))
         # break
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
         print('****** IoU & ACC ******')
-        print('Uncertainty Quality Measure = {}'.format(uncertainty_measure))
         print('Mean IoU = {0:.01%}'.format(mean_IOU))
         for ii in range(self.conf.num_cls):
             print('     - {0} class: IoU={1:.01%}, ACC={2:.01%}'.format(self.conf.label_name[ii], IOU[ii], ACC[ii]))

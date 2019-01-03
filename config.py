@@ -1,10 +1,10 @@
 import tensorflow as tf
 
 flags = tf.app.flags
-flags.DEFINE_string('mode', 'train', 'train or test')
-flags.DEFINE_boolean('bayes', False, 'Whether to use Bayesian network or not')
+flags.DEFINE_string('mode', 'test', 'train or test')
+flags.DEFINE_boolean('bayes', True, 'Whether to use Bayesian network or not')
 flags.DEFINE_integer('monte_carlo_simulations', 50, 'The number of monte carlo simulation runs')
-flags.DEFINE_integer('reload_step', 0, 'Reload step to continue training')
+flags.DEFINE_integer('reload_step', 89500, 'Reload step to continue training')
 
 # TFRecords
 flags.DEFINE_boolean('read_tfrecord', False, 'Whether to read the tfrecord files or directly from dataloader')
@@ -34,7 +34,7 @@ flags.DEFINE_integer('batch_size', 2, 'training batch size')
 flags.DEFINE_integer('val_batch_size', 2, 'training batch size')
 
 # data
-flags.DEFINE_string('data', 'camvid', 'Training data name; ct or camvid')   ################
+flags.DEFINE_string('data', 'ct', 'Training data name; ct or camvid')   ################
 flags.DEFINE_integer('dim', 2, 'input and network dimension; either 2 or 3')
 flags.DEFINE_string('train_data_dir', '/data_preparation/our_data/4_correctMask_normalized/train/', 'Training data')
 flags.DEFINE_string('valid_data_dir', '/data_preparation/our_data/4_correctMask_normalized/test/', 'Validation data ')
@@ -43,24 +43,24 @@ flags.DEFINE_boolean('random_crop', True, 'Crops the input and output randomly d
 flags.DEFINE_list('crop_size', [256, 256, 32], 'crop sizes')
 flags.DEFINE_boolean('data_augment', True, 'Adds augmentation to data')
 flags.DEFINE_integer('max_angle', 40, 'Maximum rotation angle along each axis; when applying augmentation')
-flags.DEFINE_integer('height', 360, 'Original image (and Network if random_crop is off) height size')   ######
-flags.DEFINE_integer('width', 480, 'Original image (and Network if random_crop is off) width size')     ######
-flags.DEFINE_integer('channel', 3, 'Original image channel size')                                       ######
+flags.DEFINE_integer('height', 512, 'Original image (and Network if random_crop is off) height size')   ######
+flags.DEFINE_integer('width', 512, 'Original image (and Network if random_crop is off) width size')     ######
+flags.DEFINE_integer('channel', 1, 'Original image channel size')                                       ######
 flags.DEFINE_integer('depth', 32, 'Network depth size during training (if random_crop is off)')
 flags.DEFINE_integer('Dcut_size', 32, 'Depth of the validation slices')
 
 # Directories
-flags.DEFINE_string('run_name', 'camvid_dropconnect', 'Run name')         ############
+flags.DEFINE_string('run_name', 'run3_weighted_dropcon', 'Run name')         ############
 flags.DEFINE_string('logdir', './Results/log_dir/', 'Logs directory')
 flags.DEFINE_string('modeldir', './Results/model_dir/', 'Model directory')
 flags.DEFINE_string('imagedir', './Results/image_dir/', 'Directory to save sample predictions')
 flags.DEFINE_string('model_name', 'model', 'Model file name')
 
 # network architecture
-flags.DEFINE_integer('num_cls', 12, 'Number of output classes')      ########
-# flags.DEFINE_list('label_name', ['background', 'liver', 'spleen', 'kidney', 'bone', 'vessel'], 'class names')   #####
-flags.DEFINE_list('label_name', ['sky', 'building', 'pole', 'road', 'pavement', 'tree', 'signsymbol'
-                                 , 'fence', 'car', 'pedestrian', 'bicyclist', 'unlabeled'], 'class names')
+flags.DEFINE_integer('num_cls', 6, 'Number of output classes')      ########
+flags.DEFINE_list('label_name', ['background', 'liver', 'spleen', 'kidney', 'bone', 'vessel'], 'class names')   #####
+# flags.DEFINE_list('label_name', ['sky', 'building', 'pole', 'road', 'pavement', 'tree', 'signsymbol'
+#                                  , 'fence', 'car', 'pedestrian', 'bicyclist', 'unlabeled'], 'class names')
 flags.DEFINE_boolean('use_BN', True, 'Adds Batch-Normalization to all convolutional layers')
 flags.DEFINE_integer('start_channel_num', 16, 'start number of outputs for the first conv layer')
 flags.DEFINE_integer('filter_size', 3, 'Filter size for the conv and deconv layers')

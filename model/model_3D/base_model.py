@@ -4,7 +4,7 @@ from tqdm import tqdm
 from DataLoaders.Data_Loader_3D import DataLoader
 from utils.plot_utils import plot_save_preds_3d
 from utils.loss_utils import cross_entropy, dice_coeff, weighted_cross_entropy
-from utils.eval_utils import get_hist, compute_iou, var_calculate
+from utils.eval_utils import get_hist, compute_iou, var_calculate_3d, get_uncertainty_precision
 import os
 import numpy as np
 
@@ -32,7 +32,7 @@ class BaseModel(object):
             self.y_prob = tf.nn.softmax(self.logits, axis=-1)
             y_one_hot = tf.one_hot(self.labels_pl, depth=self.conf.num_cls, axis=4, name='y_one_hot')
             if self.conf.weighted_loss:
-                loss = weighted_cross_entropy(y_one_hot, self.logits, self.conf.num_cls)
+                loss = weighted_cross_entropy(y_one_hot, self.logits, self.conf.num_cls, data=self.conf.data)
             else:
                 if self.conf.loss_type == 'cross-entropy':
                     with tf.name_scope('cross_entropy'):
@@ -227,54 +227,67 @@ class BaseModel(object):
         print('-' * 60)
 
     def MC_evaluate(self, dataset='valid', train_step=None):
-        num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
-        hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
-        self.sess.run(tf.local_variables_initializer())
-        scan_num = 0
-        for image_index in tqdm(range(num_batch)[:2]):
-            data_x, data_y = self.data_reader.next_batch(num=scan_num, mode=dataset)
-            depth = data_x.shape[0] * data_x.shape[-2]
-            scan_input = np.zeros((self.conf.height, self.conf.width, depth, self.conf.channel))
-            scan_mask = np.zeros((self.conf.height, self.conf.width, depth))
-            scan_mask_prob = np.zeros((self.conf.height, self.conf.width, depth, self.conf.num_cls))
-            scan_mask_pred = np.zeros((self.conf.height, self.conf.width, depth))
-            scan_mask_pred_mc = [np.zeros_like(scan_mask_pred) for _ in range(self.conf.monte_carlo_simulations)]
-            scan_mask_prob_mc = [np.zeros_like(scan_mask_prob) for _ in range(self.conf.monte_carlo_simulations)]
-            for slice_num in range(data_x.shape[0]):  # for each slice of the 3D image
-                idx_d, idx_u = slice_num * self.conf.Dcut_size, (slice_num + 1) * self.conf.Dcut_size
-                for mc_iter in range(self.conf.monte_carlo_simulations):
-                    feed_dict = {self.inputs_pl: np.expand_dims(data_x[slice_num], 0),
-                                 self.labels_pl: np.expand_dims(data_y[slice_num], 0),
-                                 self.is_training_pl: True,
-                                 self.with_dropout_pl: True,
-                                 self.keep_prob_pl: self.conf.keep_prob}
-                    inputs, mask, mask_prob, mask_pred = self.sess.run([self.inputs_pl,
-                                                                        self.labels_pl,
-                                                                        self.y_prob,
-                                                                        self.y_pred], feed_dict=feed_dict)
-                    scan_mask_prob_mc[mc_iter][:, :, idx_d:idx_u] = np.squeeze(mask_prob, axis=0)
-                    scan_mask_pred_mc[mc_iter][:, :, idx_d:idx_u] = np.squeeze(mask_pred, axis=0)
-                scan_input[:, :, idx_d:idx_u] = np.squeeze(inputs, axis=0)
-                scan_mask[:, :, idx_d:idx_u] = np.squeeze(mask, axis=0)
+        # num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
+        # hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
+        # self.sess.run(tf.local_variables_initializer())
+        # scan_num = 0
+        # for image_index in tqdm(range(num_batch)[:2]):
+        #     data_x, data_y = self.data_reader.next_batch(num=scan_num, mode=dataset)
+        #     depth = data_x.shape[0] * data_x.shape[-2]
+        #     scan_input = np.zeros((self.conf.height, self.conf.width, depth, self.conf.channel))
+        #     scan_mask = np.zeros((self.conf.height, self.conf.width, depth))
+        #     scan_mask_prob = np.zeros((self.conf.height, self.conf.width, depth, self.conf.num_cls))
+        #     scan_mask_pred = np.zeros((self.conf.height, self.conf.width, depth))
+        #     scan_mask_pred_mc = [np.zeros_like(scan_mask_pred) for _ in range(self.conf.monte_carlo_simulations)]
+        #     scan_mask_prob_mc = [np.zeros_like(scan_mask_prob) for _ in range(self.conf.monte_carlo_simulations)]
+        #     for slice_num in range(data_x.shape[0]):  # for each slice of the 3D image
+        #         idx_d, idx_u = slice_num * self.conf.Dcut_size, (slice_num + 1) * self.conf.Dcut_size
+        #         for mc_iter in range(self.conf.monte_carlo_simulations):
+        #             feed_dict = {self.inputs_pl: np.expand_dims(data_x[slice_num], 0),
+        #                          self.labels_pl: np.expand_dims(data_y[slice_num], 0),
+        #                          self.is_training_pl: True,
+        #                          self.with_dropout_pl: True,
+        #                          self.keep_prob_pl: self.conf.keep_prob}
+        #             inputs, mask, mask_prob, mask_pred = self.sess.run([self.inputs_pl,
+        #                                                                 self.labels_pl,
+        #                                                                 self.y_prob,
+        #                                                                 self.y_pred], feed_dict=feed_dict)
+        #             scan_mask_prob_mc[mc_iter][:, :, idx_d:idx_u] = np.squeeze(mask_prob, axis=0)
+        #             scan_mask_pred_mc[mc_iter][:, :, idx_d:idx_u] = np.squeeze(mask_pred, axis=0)
+        #         scan_input[:, :, idx_d:idx_u] = np.squeeze(inputs, axis=0)
+        #         scan_mask[:, :, idx_d:idx_u] = np.squeeze(mask, axis=0)
+        #
+        #     prob_mean = np.nanmean(scan_mask_prob_mc, axis=0)
+        #     prob_variance = np.var(scan_mask_prob_mc, axis=0)
+        #     pred = np.argmax(prob_mean, axis=-1)
+        #     var_one = var_calculate_3d(pred, prob_variance)
+        #     hist += get_hist(pred.flatten(), scan_mask.flatten(), num_cls=self.conf.num_cls)
+        #     self.visualize_me(np.squeeze(scan_input), scan_mask, pred, var_one, train_step=train_step,
+        #                       img_idx=image_index, mode='test')
+        #     scan_num += 1
+        #
+        import h5py
+        h5f = h5py.File(self.conf.run_name + '_bayes.h5', 'r')
+        # h5f.create_dataset('x', data=all_inputs)
+        # h5f.create_dataset('y', data=all_mask)
+        # h5f.create_dataset('y_pred', data=all_pred)
+        # h5f.create_dataset('y_var', data=all_var)
+        # h5f.create_dataset('cls_uncertainty', data=cls_uncertainty)
+        # h5f.close()
 
-            prob_mean = np.nanmean(scan_mask_prob_mc, axis=0)
-            prob_variance = np.var(scan_mask_prob_mc, axis=0)
-            pred = np.argmax(prob_mean, axis=-1)
-            var_one = var_calculate(pred, prob_variance)
-            hist += get_hist(pred.flatten(), scan_mask.flatten(), num_cls=self.conf.num_cls)
-            self.visualize_me(np.squeeze(scan_input), scan_mask, pred, var_one, train_step=train_step,
-                              img_idx=image_index, mode='test')
-            scan_num += 1
+        all_mask = h5f['y'][:]
+        all_pred = h5f['y_pred'][:]
+        all_var = h5f['y_var'][:]
+        h5f.close()
+        uncertainty_measure = get_uncertainty_precision(all_mask, all_pred, all_var)
+        print('Uncertainty Quality Measure = {}'.format(uncertainty_measure))
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
-
-        print('- IOU: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
-              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}, mean_IoU={6:.01%}'
-              .format(IOU[0], IOU[1], IOU[2], IOU[3], IOU[4], IOU[5], mean_IOU))
-        print('- ACC: bg={0:.01%}, liver={1:.01%}, spleen={2:.01%}, '
-              'kidney={3:.01%}, bone={4:.01%}, vessel={5:.01%}'
-              .format(ACC[0], ACC[1], ACC[2], ACC[3], ACC[4], ACC[5]))
-        print('-' * 60)
+        print('****** IoU & ACC ******')
+        print('Mean IoU = {0:.01%}'.format(mean_IOU))
+        for ii in range(self.conf.num_cls):
+            print('     - {0} class: IoU={1:.01%}, ACC={2:.01%}'.format(self.conf.label_name[ii], IOU[ii], ACC[ii]))
+        print('-' * 20)
 
     def visualize_me(self, x, y, y_pred, var=None, train_step=None, img_idx=None,
                      mode='valid'):  # all of shape (512, 512, num_slices)
