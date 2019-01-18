@@ -35,6 +35,8 @@ for file_path in all_files:
         image = data[0:len(data):2].reshape(num_slices, 512, 512)
         mask = data[1:len(data):2].reshape(num_slices, 512, 512)
         run_time = time.time() - start_time
+        np.unique([mask])
+        np.unique([mask]).shape
     print('run-time for image #{} with {} slices was: {} seconds'.format(img_counter, num_slices, int(run_time)))
     print('saving ...')
     h5f = h5py.File(hdf5_file_path, 'w')
