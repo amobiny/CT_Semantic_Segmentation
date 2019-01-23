@@ -1,4 +1,9 @@
 import numpy as np
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import average_precision_score, auc
+import matplotlib.pyplot as plt
+from sklearn.utils.fixes import signature
+import h5py
 
 
 def compute_iou(hist):
@@ -82,9 +87,8 @@ def get_uncertainty_precision(y, y_pred, y_var):
     """
     # first let's normalize the uncertainty maps so that its values sum to one for each input image
     # It allows us to get a final precision value which is in range [0, 1]
-    # TODO: needs to be changed to get the ROC curve
-    norm_factor = np.sum(y_pred, axis=(1, 2))   # sum of uncertainty values for each image
-    y_pred /= norm_factor[:, np.newaxis, np.newaxis]
+    norm_factor = np.sum(y_var, axis=(1, 2))   # sum of uncertainty values for each image
+    y_var /= norm_factor[:, np.newaxis, np.newaxis]
 
     wrong_pred = (y != y_pred).astype(int)
     true_pos = np.sum(wrong_pred * y_var)      # we want this to be high
@@ -94,6 +98,57 @@ def get_uncertainty_precision(y, y_pred, y_var):
 
     precision = true_pos / (true_pos + false_pos)
     return precision
+
+
+def plot_precision_recall_curve(y, y_pred, y_var):
+    # norm_factor = np.sum(y_var, axis=(1, 2))   # sum of uncertainty values for each image
+    # y_var /= norm_factor[:, np.newaxis, np.newaxis]
+
+    wrong_pred = (y != y_pred).astype(int)
+    precision, recall, _ = precision_recall_curve(wrong_pred.reshape([-1]), y_var.reshape([-1]))
+    average_precision = average_precision_score(wrong_pred.reshape([-1]), y_var.reshape([-1]))
+    return precision, recall, average_precision
+
+
+def compute_metrics(run_name, num_split=100):
+    h5f = h5py.File(run_name + '_bayes.h5', 'r')
+    y = h5f['y'][:]
+    y_pred = h5f['y_pred'][:]
+    y_var = h5f['y_var'][:]
+    h5f.close()
+    umin = np.min(y_var)
+    umax = np.max(y_var)
+    N_tot = np.prod(y.shape)
+    wrong_pred = (y != y_pred).astype(int)
+
+    precision_, recall_, threshold = precision_recall_curve(wrong_pred.reshape([-1]), y_var.reshape([-1]))
+
+    # TODO: what is the best way to pick thresholds?!
+    uT = np.linspace(umin, umax, num_split)
+    uT = threshold[::100000]
+
+    right_pred = (y == y_pred).astype(int)
+    npv, recall, acc, precision, T = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+
+    counter = 0
+    for ut in my_thresholds:
+    # for ut in uT:
+        t = (ut - umin) / (umax - umin)
+        counter += 1
+        uncertain = (y_var >= ut).astype(int)
+        certain = (y_var < ut).astype(int)
+        TP = np.sum(uncertain * wrong_pred)
+        TN = np.sum(certain * right_pred)
+        N_w = np.sum(wrong_pred)
+        N_c = np.sum(certain)
+        N_unc = np.sum(uncertain)
+        recall = np.append(recall, TP / N_w)
+        npv = np.append(npv, TN / N_c)
+        precision = np.append(precision, TP/N_unc)
+        acc = np.append(acc, (TN + TP) / N_tot)
+        T = np.append(T, t)
+    auc_ = auc(recall, precision)
+    return recall, npv, acc, precision, auc_, T
 
 
 
