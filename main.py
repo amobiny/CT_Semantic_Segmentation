@@ -33,5 +33,5 @@ def main(_):
 
 if __name__ == '__main__':
     # configure which gpu or cpu to use
-    # os.environ['CUDA_VISIBLE_DEVICES'] = '0, 1, 2'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '2, 3'
     tf.app.run()

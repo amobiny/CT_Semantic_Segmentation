@@ -6,14 +6,12 @@ import matplotlib.pyplot as plt
 from sklearn.utils.fixes import signature
 from matplotlib import colors
 
-# run_name = 'camvid_dropconnect'
-# run_name = 'camvid_all_dropconnect'
-run_name = 'camvid_dropout'
+recall_do, npv_do, acc_do, precision_do, recall_do_, auc_do, t_1 = compute_metrics(run_name='dropout_mean_uncertainty')
+recall_dc, npv_dc, acc_dc, precision_dc, recall_dc_, auc_dc, t_2 = compute_metrics(run_name='dropout_pred_uncertainty')
 
-
-recall_do, npv_do, precision_do, acc_do, auc_do, t_1 = compute_metrics(run_name='camvid_dropout')
-recall_dc, npv_dc, precision_dc, acc_dc, auc_dc, t_2 = compute_metrics(run_name='camvid_dropconnect')
-recall_dca, npv_dca, precision_dca, acc_dca, auc_dca, t_3 = compute_metrics(run_name='camvid_all_dropconnect')
+# recall_do, npv_do, acc_do, precision_do, auc_do, t_1 = compute_metrics(run_name='camvid_dropout')
+# recall_dc, npv_dc, acc_dc, precision_dc, auc_dc, t_2 = compute_metrics(run_name='camvid_dropconnect')
+# recall_dca, npv_dca, acc_dca, precision_dca, auc_dca, t_3 = compute_metrics(run_name='camvid_all_dropconnect')
 
 
 fig, axs = plt.subplots(1, 4)
@@ -24,20 +22,19 @@ step_kwargs = ({'step': 'post'}
                if 'step' in signature(plt.fill_between).parameters
                else {})
 # ax.step(recall_do, precision_do, color='r', alpha=0.2, where='post')
-ax.plot(recall_do, precision_do, color='r')
+ax.plot(recall_do_, precision_do, color='r')
 # ax.fill_between(recall_do, precision_do, alpha=0.2, color='r')
 
 # ax.step(recall_dc, precision_dc, color='g', alpha=0.2, where='post')
-ax.plot(recall_dc, precision_dc, color='b')
+ax.plot(recall_dc_, precision_dc, color='b')
 # ax.fill_between(recall_dc, precision_dc, alpha=0.2, color='g')
 
 # ax.step(recall_dca, precision_dca, color='b', alpha=0.2, where='post')
-ax.plot(recall_dca, precision_dca, color='g')
+# ax.plot(recall_dca, precision_dca, color='g')
 # ax.fill_between(recall_dca, precision_dca, alpha=0.2, color='b')
 
 ax.legend(['dropout, AUC={0:.3f}'.format(auc_do),
-           'dropconnect, AUC={0:.3f}'.format(auc_dc),
-           'all_dropconnect, AUC={0:.3f}'.format(auc_dca)])
+           'dropconnect, AUC={0:.3f}'.format(auc_dc)])
 ax.set_ylabel('Precision')
 ax.set_xlabel('Recall')
 ax.set_ylim([0.0, 1.05])
@@ -47,21 +44,21 @@ ax.set_xlim([0.0, 1.05])
 ax = axs[1]
 ax.plot(t_1, recall_do, 'o-', c='r', markersize=2)
 ax.plot(t_2, recall_dc, 'o-', c='b', markersize=2)
-ax.plot(t_3, recall_dca, 'o-', c='g', markersize=2)
+# ax.plot(t_3, recall_dca, 'o-', c='g', markersize=2)
 ax.set_ylabel('Recall')
 ax.set_xlabel('T')
 
 ax = axs[2]
 ax.plot(t_1, npv_do, 'o-', c='r', markersize=2)
 ax.plot(t_2, npv_dc, 'o-', c='b', markersize=2)
-ax.plot(t_3, npv_dca, 'o-', c='g', markersize=2)
+# ax.plot(t_3, npv_dca, 'o-', c='g', markersize=2)
 ax.set_ylabel('NPV')
 ax.set_xlabel('T')
 
 ax = axs[3]
 ax.plot(t_1, acc_do, 'o-', c='r', markersize=2)
 ax.plot(t_2, acc_dc, 'o-', c='b', markersize=2)
-ax.plot(t_3, acc_dca, 'o-', c='g', markersize=2)
+# ax.plot(t_3, acc_dca, 'o-', c='g', markersize=2)
 ax.set_ylabel('Uncertainty Accuracy')
 ax.set_xlabel('T')
 

@@ -110,8 +110,8 @@ def plot_precision_recall_curve(y, y_pred, y_var):
     return precision, recall, average_precision
 
 
-def compute_metrics(run_name, num_split=100):
-    h5f = h5py.File(run_name + '_bayes.h5', 'r')
+def compute_metrics(run_name, num_split=20):
+    h5f = h5py.File(run_name + '.h5', 'r')
     y = h5f['y'][:]
     y_pred = h5f['y_pred'][:]
     y_var = h5f['y_var'][:]
@@ -125,14 +125,13 @@ def compute_metrics(run_name, num_split=100):
 
     # TODO: what is the best way to pick thresholds?!
     uT = np.linspace(umin, umax, num_split)
-    uT = threshold[::100000]
+    # uT = np.append(threshold[::100000], threshold[-1])
 
     right_pred = (y == y_pred).astype(int)
     npv, recall, acc, precision, T = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
 
     counter = 0
-    for ut in my_thresholds:
-    # for ut in uT:
+    for ut in uT:
         t = (ut - umin) / (umax - umin)
         counter += 1
         uncertain = (y_var >= ut).astype(int)
@@ -147,8 +146,8 @@ def compute_metrics(run_name, num_split=100):
         precision = np.append(precision, TP/N_unc)
         acc = np.append(acc, (TN + TP) / N_tot)
         T = np.append(T, t)
-    auc_ = auc(recall, precision)
-    return recall, npv, acc, precision, auc_, T
+    auc_ = auc(recall_, precision_)
+    return recall, npv, acc, precision_, recall_, auc_, T
 
 
 
