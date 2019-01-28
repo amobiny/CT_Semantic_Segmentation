@@ -3,7 +3,7 @@ from tqdm import tqdm
 from utils.data_utils import get_filename_list, dataset_inputs
 from utils.plot_utils import plot_save_preds_2d
 from utils.loss_utils import cross_entropy, dice_coeff, weighted_cross_entropy
-from utils.eval_utils import get_hist, compute_iou, var_calculate_2d, get_uncertainty_precision
+from utils.eval_utils import get_hist, compute_iou, var_calculate_2d, get_uncertainty_precision, predictive_entropy
 import os
 import numpy as np
 
@@ -271,8 +271,9 @@ class BaseModel(object):
             prob_mean = np.nanmean(mask_prob_mc, axis=0)
             prob_variance = np.var(mask_prob_mc, axis=0)
             pred = np.argmax(prob_mean, axis=-1)
-            # var_one = np.nanmean(prob_variance, axis=-1)
-            var_one = var_calculate_2d(pred, prob_variance)
+            var_one = np.nanmean(prob_variance, axis=-1)
+            # var_one = var_calculate_2d(pred, prob_variance)
+            # var_one = predictive_entropy(prob_mean)
             hist += get_hist(pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
 
             # if all_inputs.shape[0] < 6:
@@ -291,7 +292,7 @@ class BaseModel(object):
         self.visualize(all_inputs, all_mask, all_pred, all_var, cls_uncertainty, train_step=train_step,
                        mode='test')
         import h5py
-        h5f = h5py.File('dropconnect_pred_uncertainty.h5', 'w')
+        h5f = h5py.File('dropout_mean_uncertainty.h5', 'w')
         h5f.create_dataset('x', data=all_inputs)
         h5f.create_dataset('y', data=all_mask)
         h5f.create_dataset('y_pred', data=all_pred)
@@ -304,8 +305,8 @@ class BaseModel(object):
         # all_pred = h5f['y_pred'][:]
         # all_var = h5f['y_var'][:]
         # h5f.close()
-        uncertainty_measure = get_uncertainty_precision(all_mask, all_pred, all_var)
-        print('Uncertainty Quality Measure = {}'.format(uncertainty_measure))
+        # uncertainty_measure = get_uncertainty_precision(all_mask, all_pred, all_var)
+        # print('Uncertainty Quality Measure = {}'.format(uncertainty_measure))
         # break
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
@@ -320,7 +321,7 @@ class BaseModel(object):
         if mode == 'valid':
             dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
         elif mode == "test":
-            dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step) + '_test_pred')
+            dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step) + '_test_mean')
 
         print('saving sample prediction images....... ')
         cls_uncertainty = None

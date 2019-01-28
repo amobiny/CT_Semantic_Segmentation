@@ -100,6 +100,11 @@ def get_uncertainty_precision(y, y_pred, y_var):
     return precision
 
 
+def predictive_entropy(mean_prob):
+    eps = 1e-5
+    return -1 * np.sum(mean_prob * np.log(mean_prob + eps), axis=-1)
+
+
 def plot_precision_recall_curve(y, y_pred, y_var):
     # norm_factor = np.sum(y_var, axis=(1, 2))   # sum of uncertainty values for each image
     # y_var /= norm_factor[:, np.newaxis, np.newaxis]
