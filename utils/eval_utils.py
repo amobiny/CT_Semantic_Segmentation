@@ -105,6 +105,20 @@ def predictive_entropy(mean_prob):
     return -1 * np.sum(mean_prob * np.log(mean_prob + eps), axis=-1)
 
 
+def mutual_info(mean_prob, mc_prob):
+    """
+    computes the mutual information
+    :param mean_prob: average MC probabilities of shape [batch_size, img_h, img_w, num_cls]
+    :param mc_prob: List MC probabilities of length mc_simulations;
+                    each of shape  of shape [batch_size, img_h, img_w, num_cls]
+    :return: mutual information of shape [batch_size, img_h, img_w, num_cls]
+    """
+    eps = 1e-5
+    first_term = -1 * np.sum(mean_prob * np.log(mean_prob + eps), axis=-1)
+    second_term = np.sum(np.mean([prob * np.log(prob + eps) for prob in mc_prob], axis=0), axis=-1)
+    return first_term + second_term
+
+
 def plot_precision_recall_curve(y, y_pred, y_var):
     # norm_factor = np.sum(y_var, axis=(1, 2))   # sum of uncertainty values for each image
     # y_var /= norm_factor[:, np.newaxis, np.newaxis]
@@ -153,6 +167,3 @@ def compute_metrics(run_name, num_split=20):
         T = np.append(T, t)
     auc_ = auc(recall_, precision_)
     return recall, npv, acc, precision_, recall_, auc_, T
-
-
-

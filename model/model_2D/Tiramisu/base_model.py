@@ -1,5 +1,7 @@
 import tensorflow as tf
 from tqdm import tqdm
+
+from DataLoaders.dataset_loaders.dataset_loaders.images.cityscapes import CityscapesDataset
 from utils.data_utils import get_filename_list, dataset_inputs
 from utils.plot_utils import plot_save_preds_2d
 from utils.loss_utils import cross_entropy, dice_coeff, weighted_cross_entropy
@@ -14,8 +16,8 @@ class BaseModel(object):
     def __init__(self, sess, conf):
         self.sess = sess
         self.conf = conf
-        self.input_shape = [None, self.conf.height, self.conf.width, self.conf.channel]
-        self.output_shape = [None, self.conf.height, self.conf.width]
+        self.input_shape = [None, None, None, self.conf.channel]
+        self.output_shape = [None, None, None]
         self.create_placeholders()
 
     def create_placeholders(self):
@@ -63,7 +65,7 @@ class BaseModel(object):
         learning_rate = tf.train.exponential_decay(self.conf.init_lr,
                                                    global_step,
                                                    decay_steps=2000,
-                                                   decay_rate=0.97,
+                                                   decay_rate=0.99,
                                                    staircase=True)
         self.learning_rate = tf.maximum(learning_rate, self.conf.lr_min)
         with tf.name_scope('Optimizer'):
@@ -108,27 +110,33 @@ class BaseModel(object):
 
     def train(self):
         self.sess.run(tf.local_variables_initializer())
-        self.best_validation_loss = 0.0928
-        self.best_mean_IOU = 0.56
+        self.best_validation_loss = 0.446
+        self.best_mean_IOU = 0.16
         if self.conf.reload_step > 0:
             self.reload(self.conf.reload_step)
             print('----> Continue Training from step #{}'.format(self.conf.reload_step))
         else:
             print('----> Start Training')
-        if self.conf.data == 'ct':
-            from DataLoaders.Data_Loader_2D import DataLoader
-        elif self.conf.data == 'camvid':
-            from DataLoaders.CamVid_loader import DataLoader
+
+        if self.conf.data == 'cityscapes':
+            self.trainiter = CityscapesDataset(which_set='train',
+                                               batch_size=self.conf.batch_size,
+                                               seq_per_subset=0,
+                                               seq_length=0,
+                                               data_augm_kwargs={'crop_size': self.conf.crop_size,
+                                                                 'horizontal_flip': 0.5},
+                                               return_one_hot=False,
+                                               return_01c=True,
+                                               use_threads=True,
+                                               return_list=True,
+                                               nthreads=8)
         else:
             print('wrong data name')
-        self.data_reader = DataLoader(self.conf)
 
-        self.numValid = self.data_reader.count_num_samples(mode='valid')
-        self.num_val_batch = int(self.numValid / self.conf.val_batch_size)
         for train_step in range(self.conf.reload_step, self.conf.reload_step + self.conf.max_step + 1):
-            x_batch, y_batch = self.data_reader.next_batch(mode='train')
-            feed_dict = {self.inputs_pl: x_batch,
-                         self.labels_pl: y_batch,
+            train_data = self.trainiter.__next__()
+            feed_dict = {self.inputs_pl: train_data[0],
+                         self.labels_pl: train_data[1],
                          self.is_training_pl: True,
                          self.with_dropout_pl: True,
                          self.keep_prob_pl: self.conf.keep_prob}
@@ -143,7 +151,7 @@ class BaseModel(object):
                 self.save_summary(summary, train_step, is_train=True)
             else:
                 self.sess.run([self.train_op, self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
-            if train_step % self.conf.VAL_FREQ == 0:
+            if train_step % self.conf.VAL_FREQ == 0 and train_step:
                 print('-' * 25 + 'Validation' + '-' * 25)
                 self.normal_evaluate(dataset='valid', train_step=train_step)
 
@@ -186,32 +194,41 @@ class BaseModel(object):
         print('----> Model successfully restored')
 
     def normal_evaluate(self, dataset='valid', train_step=None):
-        num_batch = self.num_test_batch if dataset == 'test' else self.num_val_batch
+        valiter = CityscapesDataset(which_set='val',
+                                    batch_size=self.conf.val_batch_size,
+                                    seq_per_subset=0,
+                                    seq_length=0,
+                                    return_one_hot=False,
+                                    return_01c=True,
+                                    use_threads=True,
+                                    return_list=True,
+                                    nthreads=8,
+                                    infinite_iterator=False)
+        num_batch = self.num_test_batch if dataset == 'test' else 500
         self.sess.run(tf.local_variables_initializer())
         hist = np.zeros((self.conf.num_cls, self.conf.num_cls))
         plot_inputs = np.zeros((0, self.conf.height, self.conf.width, self.conf.channel))
         plot_mask = np.zeros((0, self.conf.height, self.conf.width))
         plot_mask_pred = np.zeros((0, self.conf.height, self.conf.width))
         for step in range(num_batch):
-            start = self.conf.val_batch_size * step
-            end = self.conf.val_batch_size * (step + 1)
-            data_x, data_y = self.data_reader.next_batch(start=start, end=end, mode=dataset)
-            feed_dict = {self.inputs_pl: data_x,
-                         self.labels_pl: data_y,
+            valid_data = valiter.__next__()
+            feed_dict = {self.inputs_pl: valid_data[0],
+                         self.labels_pl: valid_data[1],
                          self.is_training_pl: True,
                          self.with_dropout_pl: False,
                          self.keep_prob_pl: 1}
             self.sess.run([self.mean_loss_op, self.mean_accuracy_op], feed_dict=feed_dict)
             mask_pred = self.sess.run(self.y_pred, feed_dict=feed_dict)
-            hist += get_hist(mask_pred.flatten(), data_y.flatten(), num_cls=self.conf.num_cls)
-            if plot_inputs.shape[0] < 100:  # randomly select a few slices to plot and save
+            hist += get_hist(mask_pred.flatten(), valid_data[1].flatten(), num_cls=self.conf.num_cls)
+            if plot_inputs.shape[0] < 20:  # randomly select a few slices to plot and save
                 # idx = np.random.randint(self.conf.batch_size)
-                plot_inputs = np.concatenate((plot_inputs, data_x.reshape(-1, self.conf.height, self.conf.width,
-                                                                          self.conf.channel)), axis=0)
-                plot_mask = np.concatenate((plot_mask, data_y.reshape(-1, self.conf.height, self.conf.width)),
+                plot_inputs = np.concatenate((plot_inputs, valid_data[0].reshape(-1, self.conf.height, self.conf.width,
+                                                                                 self.conf.channel)), axis=0)
+                plot_mask = np.concatenate((plot_mask, valid_data[1].reshape(-1, self.conf.height, self.conf.width)),
                                            axis=0)
                 plot_mask_pred = np.concatenate(
                     (plot_mask_pred, mask_pred.reshape(-1, self.conf.height, self.conf.width)), axis=0)
+                # self.visualize(plot_inputs, plot_mask, plot_mask_pred, train_step=train_step, mode='valid')
 
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
@@ -274,8 +291,8 @@ class BaseModel(object):
             pred = np.argmax(prob_mean, axis=-1)
             # var_one = np.nanmean(prob_variance, axis=-1)
             # var_one = var_calculate_2d(pred, prob_variance)
-            var_one = predictive_entropy(prob_mean)
-            # var_one = mutual_info(prob_mean, mask_prob_mc)
+            # var_one = predictive_entropy(prob_mean)
+            var_one = mutual_info(prob_mean, mask_prob_mc)
             hist += get_hist(pred.flatten(), mask.flatten(), num_cls=self.conf.num_cls)
 
             # if all_inputs.shape[0] < 6:
@@ -290,11 +307,10 @@ class BaseModel(object):
                                               prob_variance.reshape(-1, self.conf.height, self.conf.width,
                                                                     self.conf.num_cls)),
                                              axis=0)
-            # else:
         self.visualize(all_inputs, all_mask, all_pred, all_var, cls_uncertainty, train_step=train_step,
                        mode='test')
         import h5py
-        h5f = h5py.File('dropconnect_entropy_uncertainty.h5', 'w')
+        h5f = h5py.File(self.conf.run_name + '_MI.h5', 'w')
         h5f.create_dataset('x', data=all_inputs)
         h5f.create_dataset('y', data=all_mask)
         h5f.create_dataset('y_pred', data=all_pred)
@@ -302,17 +318,18 @@ class BaseModel(object):
         h5f.create_dataset('cls_uncertainty', data=cls_uncertainty)
         h5f.close()
 
-        # h5f = h5py.File('dropout_pred_uncertainty.h5', 'r')
+        # h5f = h5py.File(self.conf.run_name + '_bayes.h5', 'r')
         # all_mask = h5f['y'][:]
         # all_pred = h5f['y_pred'][:]
         # all_var = h5f['y_var'][:]
         # h5f.close()
-        # uncertainty_measure = get_uncertainty_precision(all_mask, all_pred, all_var)
-        # print('Uncertainty Quality Measure = {}'.format(uncertainty_measure))
+        uncertainty_measure = get_uncertainty_precision(all_mask, all_pred, all_var)
+
         # break
         IOU, ACC = compute_iou(hist)
         mean_IOU = np.mean(IOU)
         print('****** IoU & ACC ******')
+        print('Uncertainty Quality Measure = {}'.format(uncertainty_measure))
         print('Mean IoU = {0:.01%}'.format(mean_IOU))
         for ii in range(self.conf.num_cls):
             print('     - {0} class: IoU={1:.01%}, ACC={2:.01%}'.format(self.conf.label_name[ii], IOU[ii], ACC[ii]))
@@ -323,7 +340,7 @@ class BaseModel(object):
         if mode == 'valid':
             dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step))
         elif mode == "test":
-            dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step) + '_test_entropy')
+            dest_path = os.path.join(self.conf.imagedir + self.conf.run_name, str(train_step) + '_test_MI')
 
         print('saving sample prediction images....... ')
         cls_uncertainty = None

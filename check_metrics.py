@@ -7,7 +7,7 @@ from sklearn.utils.fixes import signature
 from matplotlib import colors
 
 recall_do, npv_do, acc_do, precision_do, recall_do_, auc_do, t_1 = compute_metrics(run_name='dropout_mean_uncertainty')
-recall_dc, npv_dc, acc_dc, precision_dc, recall_dc_, auc_dc, t_2 = compute_metrics(run_name='dropout_pred_uncertainty')
+recall_dc, npv_dc, acc_dc, precision_dc, recall_dc_, auc_dc, t_2 = compute_metrics(run_name='dropout_entropy_uncertainty')
 
 # recall_do, npv_do, acc_do, precision_do, auc_do, t_1 = compute_metrics(run_name='camvid_dropout')
 # recall_dc, npv_dc, acc_dc, precision_dc, auc_dc, t_2 = compute_metrics(run_name='camvid_dropconnect')

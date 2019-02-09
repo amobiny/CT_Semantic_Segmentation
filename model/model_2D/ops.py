@@ -53,7 +53,7 @@ def conv_2d(inputs, filter_size, num_filters, layer_name, add_batch_norm, is_tra
     with tf.variable_scope(layer_name):
         shape = [filter_size, filter_size, num_in_channel, num_filters]
         weights = weight_variable(layer_name, shape=shape)
-        # weights = tf.reshape(drop_connect(weights, keep_prob), shape=shape)
+        weights = tf.reshape(drop_connect(weights, keep_prob), shape=shape)
         tf.summary.histogram('W', weights)
         layer = tf.nn.conv2d(input=inputs,
                              filter=weights,
