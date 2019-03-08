@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import precision_recall_curve, roc_curve
 from sklearn.metrics import average_precision_score, auc
 import matplotlib.pyplot as plt
 from sklearn.utils.fixes import signature
@@ -129,7 +129,7 @@ def plot_precision_recall_curve(y, y_pred, y_var):
     return precision, recall, average_precision
 
 
-def compute_metrics(run_name, num_split=20):
+def compute_metrics(run_name, num_split=10):
     h5f = h5py.File(run_name + '.h5', 'r')
     y = h5f['y'][:]
     y_pred = h5f['y_pred'][:]
@@ -141,6 +141,7 @@ def compute_metrics(run_name, num_split=20):
     wrong_pred = (y != y_pred).astype(int)
 
     precision_, recall_, threshold = precision_recall_curve(wrong_pred.reshape([-1]), y_var.reshape([-1]))
+    fpr, tpr, threshold_ = roc_curve(wrong_pred.reshape([-1]), y_var.reshape([-1]))
 
     # TODO: what is the best way to pick thresholds?!
     uT = np.linspace(umin, umax, num_split)
@@ -166,4 +167,5 @@ def compute_metrics(run_name, num_split=20):
         acc = np.append(acc, (TN + TP) / N_tot)
         T = np.append(T, t)
     auc_ = auc(recall_, precision_)
-    return recall, npv, acc, precision_, recall_, auc_, T
+    roc_auc = auc(fpr, tpr)
+    return recall, npv, acc, precision_, recall_, auc_, T, fpr, tpr, roc_auc
